@@ -1,9 +1,13 @@
 from discord.ext import commands
 import discord
+import os
 
 #get unique bot and channel ids from .env file
-#from dotenv import load_dotenv
-#load_dotenv()
+from dotenv import load_dotenv, find_dotenv
+load_dotenv()
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHANNEL_ID = os.getenv("CHANNEL_ID")
 
 #initialize bot that intents to use all discord features
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
