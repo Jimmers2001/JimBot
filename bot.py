@@ -120,9 +120,13 @@ async def pick(ctx):
     agents = ["Brimstone", "Viper", "Omen", "Killjoy", "Cypher", "Phoenix", "Sova",
         "Sage", "Jett", "Reyna", "Raze", "Breach", "Skye", "Yoru", "Astra", "KAYO",
         "Chamber", "Neon", "Fade", "Harbor", "Gekko"]
-    i = random.randint(0, 21)
-    await ctx.channel.send(str(ctx.author.name) + " should play " + agents[i])
+    agent = random.choice(agents)
+    await ctx.channel.send(str(ctx.author.name) + " should play " + agent)
 
+@bot.command()
+async def flip(ctx):
+    coin = random.choice(['Heads', 'Tails'])
+    await ctx.send(f"{coin}!")
 
 #loop and continuously run until the bot is ended
 keep_alive() #creates a replit url that we constantly ping using uptimerobot to keep the bot active and running
