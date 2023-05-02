@@ -48,14 +48,27 @@ async def on_message(message):
     if (message.author == bot.user):
         return
 
-    if ("david" in message.content.lower()):
+    if 'kyle' in message.content.lower():
+        await message.add_reaction('\U0001F913')  # nerd face emoji
+
+    if 'jim' in message.content.lower() and not 'jimbot' in message.content.lower():
+        await message.add_reaction('\U0001F60E')  # sunglasses emoji
+
+    if (False and "david" in message.content.lower()):
         #check if the person saying david is in the vc
         if message.author.voice and message.author.voice.channel:
             # Connect to the voice channel that the author is in
             await message.channel.send("connecting")
             vc = await message.author.voice.channel.connect()
             await message.channel.send("done connecting")
-            #vc.play(discord.FFmpegPCMAudio(
+
+            #vc.play(discord.FFmpegPCMAudio('testing.mp3'), after=lambda e: print('done', e))
+            #vc.is_playing()
+            #vc.pause()
+            #vc.resume()
+            #vc.stop()
+
+            #await vc.play(discord.FFmpegPCMAudio(
             #  'https://www.youtube.com/watch?v=VpnzssRMxYA&ab_channel=Zechal'),
             #        after=lambda e: print('done', e))
             #await asyncio.sleep(2)
