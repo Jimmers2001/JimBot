@@ -1,6 +1,7 @@
 from discord.ext import commands
 import discord
 from playsound import playsound
+from discord import FFmpegPCMAudio
 import asyncio
 import os
 from replit import db
@@ -46,6 +47,23 @@ async def on_message(message):
     #if the message is from the bot itself, do nothing
     if (message.author == bot.user):
         return
+
+    if ("david" in message.content.lower()):
+        #check if the person saying david is in the vc
+        if message.author.voice and message.author.voice.channel:
+            # Connect to the voice channel that the author is in
+            await message.channel.send("connecting")
+            vc = await message.author.voice.channel.connect()
+            await message.channel.send("done connecting")
+            #vc.play(discord.FFmpegPCMAudio(
+            #  'https://www.youtube.com/watch?v=VpnzssRMxYA&ab_channel=Zechal'),
+            #        after=lambda e: print('done', e))
+            #await asyncio.sleep(2)
+            await message.channel.send("Disconnecting")
+            await vc.disconnect()
+            await message.channel.send("done disconnecting")
+        #else:
+        #nothing will happen but dont alert the channel
 
     #MUST HAVE PROCESS_COMMANDS so other commands can be done as well
     await bot.process_commands(message)
@@ -128,13 +146,19 @@ async def balance(ctx):
 async def pay(ctx, *arr):
     giver = ctx.author.name
     receiver = arr[0]
+    amount = arr[1] #ignore the rest of arr arguments
+
+    #confirm the amount is valid
+    if not amount.isnumeric():
+        await ctx.channel.send("Invalid amount: " + amount)
+        return
     amount = int(arr[1])
 
     if giver == receiver:
         await ctx.channel.send("Cannot pay yourself " + giver)
         return
     if not giver in db.keys():
-        await ctx.channel.send("Could not find account: " + giver)
+        await ctx.channel.send("Could not find your account: " + giver)
         return
     if not receiver in db.keys():
         await ctx.channel.send("Could not find account: " + receiver)
@@ -178,6 +202,10 @@ async def pushups(ctx):
 #example: !play blackjack 100
 async def play(ctx, *arr):
     game = arr[0]
+    bet = arr[1]
+    if not bet.isnumeric():
+        await ctx.channel.send("Invalid bet amount: " + bet)
+        return
     bet = int(arr[1])
 
     if db[ctx.author.name] < bet:
