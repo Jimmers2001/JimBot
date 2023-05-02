@@ -28,18 +28,6 @@ async def initialize_db(guild):
         db[member.name] = 1000
     sorted(db, reverse=True)
 
-#add amount to a user's bank account
-async def bank_update_db(ctx, amount):
-    user = str(ctx.author.name)
-    if user in db.keys():
-        db[user] += amount
-    else:
-        #only happens if a user joins after the bot started running
-        db[user] = 1000 + amount
-
-    if amount < 0:
-      await ctx.channel.send(user + " has gone bankrupt!")
-
 #####################################################################################
 #                                    EVENTS                                         #
 #####################################################################################
@@ -50,7 +38,7 @@ async def on_ready():  #runs when the bot is initialized
     await channel.send("Hey channel, I'm JimBot and I'm cool!")
     
     guild = bot.get_guild(GUILD_ID)
-    await initialize_db(guild) #only wanna initialize once, if ever ran again it erases everything
+    #await initialize_db(guild) #only wanna initialize once, if ever ran again it erases everything
 
 
 @bot.event
@@ -79,6 +67,10 @@ async def add(ctx, *arr):  #argv
     await ctx.send(f"Result = {result}")
 
 
+##########################################
+#               CONNECTION               #
+##########################################
+
 @bot.command(pass_context=True)
 async def join(ctx):
     if (ctx.author.voice):
@@ -88,7 +80,7 @@ async def join(ctx):
         await ctx.send("You are not in a voice channel")
 
 
-@bot.command(pass_context=True)
+@bot.command(pass_context=True, aliases=['disconnect', 'die', 'kill'])
 async def leave(ctx):
     if (ctx.voice_client):
         await ctx.guild.voice_client.disconnect()
@@ -96,7 +88,27 @@ async def leave(ctx):
     else:
         await ctx.send("Cannot leave the voice channel since I am not in one.")
 
-@bot.command(aliases=['blb'])
+
+##########################################
+#               FINANCES                 #
+##########################################
+
+#add amount to a user's bank account
+async def bank_update_db(ctx, amount):
+    user = str(ctx.author.name)
+    original_bal = 0
+    if user in db.keys():
+        original_bal = db[user]
+        db[user] += amount
+    else:
+        #only happens if a user joins after the bot started running
+        #so in practice should be never
+        db[user] = 1000 + amount
+
+    if original_bal > 0 and db[user] < 0:
+      await ctx.channel.send(":crab: " + user + " has gone bankrupt! :crab:")
+
+@bot.command(aliases=['blb', 'leaderboard'])
 async def bank_leaderboard(ctx):
     if (len(db.keys()) == 0):
        await ctx.channel.send("No bank users yet")
@@ -106,16 +118,77 @@ async def bank_leaderboard(ctx):
         amount = db[user]
         await ctx.channel.send(user + " has $" + str(amount))
 
+@bot.command(aliases=['bal'])
+async def balance(ctx):
+    await ctx.channel.send(ctx.author.name + " has $" + 
+                           str(db[ctx.author.name]) + " :money_with_wings:")
+
 @bot.command()
-#!play blackjack 100
+#example: !pay Jimmers2001 100
+async def pay(ctx, *arr):
+    giver = ctx.author.name
+    receiver = arr[0]
+    amount = int(arr[1])
+
+    if giver == receiver:
+        await ctx.channel.send("Cannot pay yourself " + giver)
+        return
+    if not giver in db.keys():
+        await ctx.channel.send("Could not find account: " + giver)
+        return
+    if not receiver in db.keys():
+        await ctx.channel.send("Could not find account: " + receiver)
+        return
+    if amount < 0:
+        await ctx.channel.send("Cannot give negative amount to " + receiver)
+        return
+
+    #check if the giver has enough to give
+    if db[giver] > amount:
+        #assume giver and receiver both have bank accounts
+        db[giver] -= amount
+        db[receiver] += amount
+        embed = discord.Embed(
+            title = ":moneybag: Transaction :moneybag:",
+            description = giver + " gave $" + str(amount) + " to " + receiver,
+            color=discord.Color.green()
+        )
+
+        await ctx.channel.send(embed=embed)
+
+    else:
+        await ctx.channel.send(giver + " is too poor to give $" + str(amount) + " to " + receiver)
+        return
+    
+
+
+##########################################
+#               GAMES                    #
+##########################################
+@bot.command(aliases=['pushup', 'squats'])
+async def pushups(ctx): 
+    await ctx.channel.send(str(ctx.author.name) + " has to do 10 pushups/squats for $50")
+    await asyncio.sleep(30)
+    await ctx.channel.send(str(ctx.author.name) + " better have done 10 pushups/squats... here's $50! :muscle:")
+    await bank_update_db(ctx, 50)
+
+
+
+@bot.command()
+#example: !play blackjack 100
 async def play(ctx, *arr):
     game = arr[0]
     bet = int(arr[1])
+
+    if db[ctx.author.name] < bet:
+        await ctx.channel.send(str(ctx.author.name) + " has insufficient funds to bet $" + str(bet))
+        return
+
     await ctx.channel.send(str(ctx.author.name) + " is playing " + game + " with bet " + str(bet))
     #for now, just always win and double the bet
     await bank_update_db(ctx, bet)
 
-@bot.command()
+@bot.command(aliases=['agent'])
 async def pick(ctx):
     agents = ["Brimstone", "Viper", "Omen", "Killjoy", "Cypher", "Phoenix", "Sova",
         "Sage", "Jett", "Reyna", "Raze", "Breach", "Skye", "Yoru", "Astra", "KAYO",
@@ -123,7 +196,7 @@ async def pick(ctx):
     agent = random.choice(agents)
     await ctx.channel.send(str(ctx.author.name) + " should play " + agent)
 
-@bot.command()
+@bot.command(aliases=['coinflip', 'coin'])
 async def flip(ctx):
     coin = random.choice(['Heads', 'Tails'])
     await ctx.send(f"{coin}!")
