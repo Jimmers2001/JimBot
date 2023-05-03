@@ -1,7 +1,7 @@
-from discord.ext import commands
-import discord
+#from discord.ext import commands
+#import discord
 from playsound import playsound
-from discord import FFmpegPCMAudio
+#from discord import FFmpegPCMAudio
 import asyncio
 import os
 from replit import db
@@ -9,7 +9,8 @@ from keep_alive import keep_alive
 import random
 import nextcord
 from nextcord.ext import commands
-from play_wordle import play_wordle
+#from play_wordle import play_wordle
+from utils import generate_puzzle_embed
 
 #get unique bot and channel ids from .env file
 from dotenv import load_dotenv, find_dotenv
@@ -21,7 +22,7 @@ CHANNEL_ID = int(os.getenv("CHANNEL_ID"))  #must be integer
 GUILD_ID = int(os.getenv("GUILD_ID"))
 
 #initialize bot that intents to use all discord features
-bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
+bot = commands.Bot(command_prefix="!", intents=nextcord.Intents.all())
       
 #empty db and initialize all users with $1000
 async def initialize_db(guild):
@@ -32,9 +33,11 @@ async def initialize_db(guild):
         db[member.name] = 1000
     sorted(db, reverse=True)
 
+    
 #####################################################################################
 #                                    EVENTS                                         #
 #####################################################################################
+
 @bot.event
 async def on_ready():  #runs when the bot is initialized
     print('Bot is ready')
@@ -65,13 +68,13 @@ async def on_message(message):
             vc = await message.author.voice.channel.connect()
             await message.channel.send("done connecting")
 
-            #vc.play(discord.FFmpegPCMAudio('testing.mp3'), after=lambda e: print('done', e))
+            #vc.play(nextcord.FFmpegPCMAudio('testing.mp3'), after=lambda e: print('done', e))
             #vc.is_playing()
             #vc.pause()
             #vc.resume()
             #vc.stop()
 
-            #await vc.play(discord.FFmpegPCMAudio(
+            #await vc.play(nextcord.FFmpegPCMAudio(
             #  'https://www.youtube.com/watch?v=VpnzssRMxYA&ab_channel=Zechal'),
             #        after=lambda e: print('done', e))
             #await asyncio.sleep(2)
@@ -88,6 +91,7 @@ async def on_message(message):
 #####################################################################################
 #                                    COMMANDS                                       #
 #####################################################################################
+
 @bot.command()
 async def hello(ctx):  #argv
     await ctx.send("Hiya")
@@ -188,10 +192,10 @@ async def pay(ctx, *arr):
         #assume giver and receiver both have bank accounts
         db[giver] -= amount
         db[receiver] += amount
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title = ":moneybag: Transaction :moneybag:",
             description = giver + " gave $" + str(amount) + " to " + receiver,
-            color=discord.Color.green()
+            color=nextcord.Color.green()
         )
 
         await ctx.channel.send(embed=embed)
@@ -199,12 +203,12 @@ async def pay(ctx, *arr):
     else:
         await ctx.channel.send(giver + " is too poor to give $" + str(amount) + " to " + receiver)
         return
-    
 
 
 ##########################################
 #               GAMES                    #
 ##########################################
+
 @bot.command(aliases=['pushup', 'squats'])
 async def pushups(ctx): 
     await ctx.channel.send(str(ctx.author.name) + " has to do 10 pushups/squats for $50")
@@ -212,6 +216,15 @@ async def pushups(ctx):
     await ctx.channel.send(str(ctx.author.name) + " better have done 10 pushups/squats... here's $50! :muscle:")
     await bank_update_db(ctx, 50)
 
+@bot.command(description="Play a game of wordle")
+async def wordle(interaction: nextcord.Interaction):
+    #generate a puzzle
+    #create the puzzle to display
+    #send the puzzle as an interaction 
+    embed = generate_puzzle_embed()
+    await interaction.send(embed=embed)
+    
+"""
 @bot.command()
 #example: !play blackjack 100
 async def play(ctx, *arr):
@@ -237,7 +250,7 @@ async def play(ctx, *arr):
     await ctx.channel.send(str(ctx.author.name) + " is playing " + game + " with bet " + str(bet))
     #for now, just always win and double the bet
     await bank_update_db(ctx, bet)
-
+"""
 @bot.command(aliases=['agent'])
 async def pick(ctx):
     agents = ["Brimstone", "Viper", "Omen", "Killjoy", "Cypher", "Phoenix", "Sova",
