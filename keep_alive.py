@@ -1,6 +1,9 @@
 from flask import Flask
 from threading import Thread
 
+# this file creates a webapp on replit and is pinged by uptimerobot every 50 minutes 
+# so the replit stays active permanently (shuts down after 60 minutes of no use)
+# making the discord bot live permanently
 app = Flask('')
 
 @app.route('/')

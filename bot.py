@@ -7,6 +7,9 @@ import os
 from replit import db
 from keep_alive import keep_alive
 import random
+import nextcord
+from nextcord.ext import commands
+from play_wordle import play_wordle
 
 #get unique bot and channel ids from .env file
 from dotenv import load_dotenv, find_dotenv
@@ -209,12 +212,18 @@ async def pushups(ctx):
     await ctx.channel.send(str(ctx.author.name) + " better have done 10 pushups/squats... here's $50! :muscle:")
     await bank_update_db(ctx, 50)
 
-
-
 @bot.command()
 #example: !play blackjack 100
 async def play(ctx, *arr):
     game = arr[0]
+
+    #check for games that dont involve bets
+    if game.strip().lower() == "wordle":
+
+        await play_wordle(ctx, *arr)
+        return
+
+    #continue with games that do have bets
     bet = arr[1]
     if not bet.isnumeric():
         await ctx.channel.send("Invalid bet amount: " + bet)
