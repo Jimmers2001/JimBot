@@ -83,6 +83,37 @@ async def on_message(message):
         #else:
         #nothing will happen but dont alert the channel
 
+
+########################
+#        WORDLE        #
+########################
+    ref = message.reference
+    #if the message is a reply (has a refernece) 
+    if ref and isinstance(ref.resolved, nextcord.Message):
+        parent = ref.resolved
+
+        #message isnt a reply to a bot or message has no embeds
+        if parent.author.id != bot.user.id or not parent.embeds:
+            return
+        
+        embed = parent.embeds[0]
+
+        #check that the word is valid
+        if not is_valid_word(message.content):
+            await message.reply(f"{message.content} is not a valid guess", delete_after = 5)
+            await message.delete(delay=5)
+            return
+
+        #update the embed
+        embed = update_embed(embed, message.content) 
+        await parent.edit(embed=embed)
+
+        #delete the message
+        try:
+            await message.delete()
+        except Exception:
+            pass
+
     #MUST HAVE PROCESS_COMMANDS so other commands can be done as well
     await bot.process_commands(message)
 
@@ -218,12 +249,13 @@ async def pushups(ctx):
 @bot.command(description="Play a game of wordle")
 async def wordle(interaction: nextcord.Interaction):
     #generate a puzzle
+    puzzle_id = random_puzzle_id()
+
     #create the puzzle to display
     #send the puzzle as an interaction 
-    letter_embed = generate_letter_embed()
-    color_embed = generate_color_embed()
-    await interaction.send(embed=letter_embed)
-    await interaction.send(embed=color_embed)
+    letter_embed = generate_letter_embed(puzzle_id)
+    color_embed = generate_color_embed(puzzle_id)
+    await interaction.send(embeds=[letter_embed, color_embed])
     
 """
 @bot.command()
