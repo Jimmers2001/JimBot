@@ -103,7 +103,6 @@ def generate_colored_word(guess: str, answer: str) -> list:
         if guess_letters[i] is not None and guess_letters[i] in answer_letters:
             colored_letters[i] = "yellow"
             answer_letters[answer_letters.index(guess_letters[i])] = None
-    print(", ".join(colored_letters))
     return colored_letters
 
 
@@ -131,6 +130,9 @@ def update_letter_embed(embed: nextcord.Embed, guess: str) -> nextcord.Embed:
     embed.description = embed.description.replace(empty_slot, letter_emojis, 1)
     return embed
 
+def is_game_over(embed: nextcord.Embed) -> bool:
+    return "\n\n" in embed.description
+
 def update_color_embed(embed: nextcord.Embed, guess: str) -> nextcord.Embed:
     puzzle_id = int(embed.footer.text.split()[1])
     answer = popular_words[puzzle_id]
@@ -140,4 +142,24 @@ def update_color_embed(embed: nextcord.Embed, guess: str) -> nextcord.Embed:
 
     #replace the first blank with the colored word
     embed.description = embed.description.replace(empty_slot, colored_emojis, 1)
+
+    #check for game over
+    remaining_guesses = embed.description.count(empty_slot)
+    if guess == answer:
+        if remaining_guesses == 0:
+            embed.description += "\n\nClose call Bozo, you kinda suck..."
+        elif remaining_guesses == 1:
+            embed.description += "\n\nYou are not built different, you are mid..."
+        elif remaining_guesses == 2:
+            embed.description += "\n\nBet."
+        elif remaining_guesses == 3:
+            embed.description += "\n\nBIIIIIIIIG :100: :fire: :weary: :sweat_drops:"
+        elif remaining_guesses == 4:
+            embed.description += "\n\nMOM GET THE CAMERA!"
+        elif remaining_guesses == 5:
+            embed.description += "\n\ncheck him pc, VAC alert"
+        embed.description += f"\nYou got the answer! It was {answer}."
+    elif guess != answer and remaining_guesses == 0:
+        embed.description += f"\n\nThe answer was {answer}. You're on the bench now."
+
     return embed

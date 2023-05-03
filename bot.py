@@ -99,10 +99,29 @@ async def on_message(message):
         letter_embed = parent.embeds[0]
         color_embed = parent.embeds[1]
 
+        #check that the game is not over
+        if is_game_over(color_embed):
+            await message.reply("The game is over. Start a new game with !wordle", delete_after=3)
+            try:
+                await message.delete(delay=3)
+            except Exception:
+                pass
+            return
+
         #check that the word is valid
+        if len(message.content.split()) > 1:
+            await message.reply(f"Given {message.content}. Please only enter one 5 letter word.", delete_after = 3)
+            try:
+                await message.delete(delay=3)
+            except Exception:
+                pass
+            return
         if not is_valid_word(message.content):
             await message.reply(f"{message.content} is not a valid guess", delete_after = 3)
-            await message.delete(delay=3)
+            try:
+                await message.delete(delay=3)
+            except Exception:
+                pass
             return
 
         #update the embed
@@ -294,7 +313,7 @@ async def pick(ctx):
     agent = random.choice(agents)
     await ctx.channel.send(str(ctx.author.name) + " should play " + agent)
 
-@bot.command(aliases=['coinflip', 'coin'])
+@bot.command(aliases=['flipcoin', 'coinflip', 'coin'])
 async def flip(ctx):
     coin = random.choice(['Heads', 'Tails'])
     await ctx.send(f"{coin}!")
