@@ -96,17 +96,19 @@ async def on_message(message):
         if parent.author.id != bot.user.id or not parent.embeds:
             return
         
-        embed = parent.embeds[0]
+        letter_embed = parent.embeds[0]
+        color_embed = parent.embeds[1]
 
         #check that the word is valid
         if not is_valid_word(message.content):
-            await message.reply(f"{message.content} is not a valid guess", delete_after = 5)
-            await message.delete(delay=5)
+            await message.reply(f"{message.content} is not a valid guess", delete_after = 3)
+            await message.delete(delay=3)
             return
 
         #update the embed
-        embed = update_embed(embed, message.content) 
-        await parent.edit(embed=embed)
+        new_letter_embed = update_letter_embed(letter_embed, message.content) 
+        new_color_embed = update_color_embed(color_embed, message.content) 
+        await parent.edit(embeds=[new_letter_embed, new_color_embed])
 
         #delete the message
         try:
@@ -253,8 +255,8 @@ async def wordle(interaction: nextcord.Interaction):
 
     #create the puzzle to display
     #send the puzzle as an interaction 
-    letter_embed = generate_letter_embed(puzzle_id)
-    color_embed = generate_color_embed(puzzle_id)
+    letter_embed = generate_empty_embed(puzzle_id)
+    color_embed = generate_empty_embed(puzzle_id)
     await interaction.send(embeds=[letter_embed, color_embed])
     
 """

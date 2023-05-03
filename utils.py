@@ -43,16 +43,30 @@ def generate_blanks():
     #return a string of 5 blank emoji characters
     return "\N{WHITE MEDIUM SQUARE}" * 5
 
-def generate_letter_embed(puzzle_id: int):
+def generate_empty_embed(puzzle_id: int):
     embed = nextcord.Embed(title="Wordle")
+    embed.description = "\n".join([generate_blanks()]*6)
+    embed.set_footer(text=
+        f"ID: {puzzle_id} | Reply to this message with your guesses to play wordle."
+    )
+    return embed
+
+#dont need
+def generate_letter_embed(puzzle_id: int, guess_letters: str):
+    embed = nextcord.Embed(title="Wordle")
+
+    #SET THE DESCRIPTION TO THE GUESS IN EMOJIS
     embed.description = "\n".join([generate_blanks()]*6)
     embed.set_footer(text=
         f"ID: {puzzle_id} | Reply to this message with your guesses to play wordle."
     )
     return embed 
 
-def generate_color_embed(puzzle_id: int):
+#dont need
+def generate_color_embed(puzzle_id: int, guess_colors):
     embed = nextcord.Embed(title="Wordle")
+
+    #SET THE DESCRIPTION TO THE GUESS IN COLORS BASED ON LOCATION
     embed.description = "\n".join([generate_blanks()]*6)
     embed.set_footer(text=
         f"ID: {puzzle_id} | Reply to this message with your guesses to play wordle."
@@ -71,9 +85,9 @@ def is_valid_word(word: str) -> bool:
 def random_puzzle_id() -> int:
     return random.randint(0,len(popular_words)-1)
 
-#produce a list of colors ["gray", "gray", "green", "yellow", "yellow"] and will eventually hand of that list to the generate_color_embed
-def generate_colored_word(guess: str, answer: str) -> str:
-    colored_letters = ["gray" for letter in guess]
+#produce a list of colors ["gray", "gray", "green", "yellow", "yellow"]
+def generate_colored_word(guess: str, answer: str) -> list:
+    colored_letters = ["gray", "gray", "gray", "gray", "gray"]
     guess_letters = list(guess)
     answer_letters = list(answer)
 
@@ -89,15 +103,41 @@ def generate_colored_word(guess: str, answer: str) -> str:
         if guess_letters[i] is not None and guess_letters[i] in answer_letters:
             colored_letters[i] = "yellow"
             answer_letters[answer_letters.index(guess_letters[i])] = None
-    print("".join(colored_letters))
-    return "".join(colored_letters)
+    print(", ".join(colored_letters))
+    return colored_letters
 
-def update_embed(embed: nextcord.Embed, guess: str) -> nextcord.Embed:
+
+def generate_emojis(input: list):
+    emojis = ""
+    for word in input:
+        #they represent colors like "gray", "yellow", or "green"
+        if len(input) > 1:
+            emojis += EMOJI_CODES[word]
+
+        #it represents a character in a word
+        else:
+            for letter in word:
+                emojis += EMOJI_CODES[letter]
+    
+    return emojis
+
+def update_letter_embed(embed: nextcord.Embed, guess: str) -> nextcord.Embed:
+    #puzzle_id = int(embed.footer.text.split()[1])
+    #answer = popular_words[puzzle_id]
+    letter_emojis = generate_emojis([guess])
+    empty_slot = generate_blanks()
+
+    #replace the first blank with the guess as emojis
+    embed.description = embed.description.replace(empty_slot, letter_emojis, 1)
+    return embed
+
+def update_color_embed(embed: nextcord.Embed, guess: str) -> nextcord.Embed:
     puzzle_id = int(embed.footer.text.split()[1])
     answer = popular_words[puzzle_id]
-    colored_word = generate_colored_word(guess, answer)
+    colored_word_list = generate_colored_word(guess, answer)
+    colored_emojis = generate_emojis(colored_word_list)
     empty_slot = generate_blanks()
 
     #replace the first blank with the colored word
-    embed.description = embed.description.replace(empty_slot, colored_word, 1)
+    embed.description = embed.description.replace(empty_slot, colored_emojis, 1)
     return embed
