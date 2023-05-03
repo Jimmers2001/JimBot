@@ -10,8 +10,7 @@ import random
 import nextcord
 from nextcord.ext import commands
 #from play_wordle import play_wordle
-from utils import generate_puzzle_embed
-
+from utils import *
 #get unique bot and channel ids from .env file
 from dotenv import load_dotenv, find_dotenv
 
@@ -33,7 +32,7 @@ async def initialize_db(guild):
         db[member.name] = 1000
     sorted(db, reverse=True)
 
-    
+
 #####################################################################################
 #                                    EVENTS                                         #
 #####################################################################################
@@ -221,8 +220,10 @@ async def wordle(interaction: nextcord.Interaction):
     #generate a puzzle
     #create the puzzle to display
     #send the puzzle as an interaction 
-    embed = generate_puzzle_embed()
-    await interaction.send(embed=embed)
+    letter_embed = generate_letter_embed()
+    color_embed = generate_color_embed()
+    await interaction.send(embed=letter_embed)
+    await interaction.send(embed=color_embed)
     
 """
 @bot.command()
