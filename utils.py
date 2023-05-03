@@ -1,5 +1,7 @@
 import random
 import nextcord
+from nextcord.ext import commands
+
 
 popular_words = open("popular-5-letter-words.txt").read().splitlines()
 all_words = set(word.strip() for word in open("sowpods.txt"))
@@ -43,35 +45,14 @@ def generate_blanks():
     #return a string of 5 blank emoji characters
     return "\N{WHITE MEDIUM SQUARE}" * 5
 
-def generate_empty_embed(puzzle_id: int):
+def generate_empty_embed(user: nextcord.User, puzzle_id: int) -> nextcord.Embed:
     embed = nextcord.Embed(title="Wordle")
     embed.description = "\n".join([generate_blanks()]*6)
+    embed.set_author(name=user.name, icon_url=user.display_avatar.url)
     embed.set_footer(text=
         f"ID: {puzzle_id} | Reply to this message with your guesses to play wordle."
     )
     return embed
-
-#dont need
-def generate_letter_embed(puzzle_id: int, guess_letters: str):
-    embed = nextcord.Embed(title="Wordle")
-
-    #SET THE DESCRIPTION TO THE GUESS IN EMOJIS
-    embed.description = "\n".join([generate_blanks()]*6)
-    embed.set_footer(text=
-        f"ID: {puzzle_id} | Reply to this message with your guesses to play wordle."
-    )
-    return embed 
-
-#dont need
-def generate_color_embed(puzzle_id: int, guess_colors):
-    embed = nextcord.Embed(title="Wordle")
-
-    #SET THE DESCRIPTION TO THE GUESS IN COLORS BASED ON LOCATION
-    embed.description = "\n".join([generate_blanks()]*6)
-    embed.set_footer(text=
-        f"ID: {puzzle_id} | Reply to this message with your guesses to play wordle."
-    )
-    return embed 
 
 #check if a word is valid
 def is_valid_word(word: str) -> bool:
@@ -104,7 +85,6 @@ def generate_colored_word(guess: str, answer: str) -> list:
             colored_letters[i] = "yellow"
             answer_letters[answer_letters.index(guess_letters[i])] = None
     return colored_letters
-
 
 def generate_emojis(input: list):
     emojis = ""

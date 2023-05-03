@@ -99,6 +99,15 @@ async def on_message(message):
         letter_embed = parent.embeds[0]
         color_embed = parent.embeds[1]
 
+        #check that the correct user is playing the game
+        if color_embed.author.name != message.author.name:
+            await message.reply(f"Get your own game bruh, {color_embed.author.name} is in the middle of clutching up.", delete_after=3)
+            try:
+                await message.delete(delay=3)
+            except Exception:
+                pass
+            return
+
         #check that the game is not over
         if is_game_over(color_embed):
             await message.reply("The game is over. Start a new game with !wordle", delete_after=3)
@@ -274,8 +283,8 @@ async def wordle(interaction: nextcord.Interaction):
 
     #create the puzzle to display
     #send the puzzle as an interaction 
-    letter_embed = generate_empty_embed(puzzle_id)
-    color_embed = generate_empty_embed(puzzle_id)
+    letter_embed = generate_empty_embed(interaction.author, puzzle_id)
+    color_embed = generate_empty_embed(interaction.author, puzzle_id)
     await interaction.send(embeds=[letter_embed, color_embed])
     
 """
