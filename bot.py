@@ -10,7 +10,7 @@ import random
 import nextcord
 from nextcord.ext import commands
 #from play_wordle import play_wordle
-from utils import *
+from wordle import *
 #get unique bot and channel ids from .env file
 from dotenv import load_dotenv, find_dotenv
 
@@ -27,9 +27,9 @@ bot = commands.Bot(command_prefix="!", intents=nextcord.Intents.all())
 async def initialize_db(guild):
     db.clear() #emptying it loses all data
     for member in guild.members:
+        db[member.name] = 420
         if member.id == bot.user.id:
-            continue
-        db[member.name] = 1000
+            db[member.name] = 0
     sorted(db, reverse=True)
 
 
@@ -37,16 +37,20 @@ async def initialize_db(guild):
 #                                    EVENTS                                         #
 #####################################################################################
 
+#runs when the bot is first initialized
 @bot.event
-async def on_ready():  #runs when the bot is initialized
+async def on_ready():  
     print('Bot is ready')
     channel = bot.get_channel(CHANNEL_ID)
     await channel.send("Hey channel, I'm JimBot and I'm cool!")
     
     guild = bot.get_guild(GUILD_ID)
-    #await initialize_db(guild) #only wanna initialize once, if ever ran again it erases everything
 
+    #only run initialize_db on the first time the bot runs on the server
+    if len(db.keys()) == 0:
+        await initialize_db(guild) #only wanna initialize once, if ever ran again it erases everything
 
+#runs every time a message is sent
 @bot.event
 async def on_message(message):
     #if the message is from the bot itself, do nothing
@@ -96,53 +100,55 @@ async def on_message(message):
         if parent.author.id != bot.user.id or not parent.embeds:
             return
         
-        letter_embed = parent.embeds[0]
-        color_embed = parent.embeds[1]
+        #make sure its a wordle embed and not another
+        if "wordle" in parent.embeds[0].title.lower():        
+            letter_embed = parent.embeds[0]
+            color_embed = parent.embeds[1]
 
-        #check that the correct user is playing the game
-        if color_embed.author.name != message.author.name:
-            await message.reply(f"Get your own game bruh, {color_embed.author.name} is in the middle of clutching up.", delete_after=3)
+            #check that the correct user is playing the game
+            if color_embed.author.name != message.author.name:
+                await message.reply(f"Get your own game bruh, {color_embed.author.name} is in the middle of clutching up.", delete_after=3)
+                try:
+                    await message.delete(delay=3)
+                except Exception:
+                    pass
+                return
+
+            #check that the game is not over
+            if is_game_over(color_embed):
+                await message.reply("The game is over. Start a new game with !wordle", delete_after=3)
+                try:
+                    await message.delete(delay=3)
+                except Exception:
+                    pass
+                return
+
+            #check that the word is valid
+            if len(message.content.split()) > 1:
+                await message.reply(f"Given {message.content}. Please only enter one 5 letter word.", delete_after = 3)
+                try:
+                    await message.delete(delay=3)
+                except Exception:
+                    pass
+                return
+            if not is_valid_word(message.content):
+                await message.reply(f"{message.content} is not a valid guess", delete_after = 3)
+                try:
+                    await message.delete(delay=3)
+                except Exception:
+                    pass
+                return
+
+            #update the embed
+            new_letter_embed = update_letter_embed(letter_embed, message.content) 
+            new_color_embed = update_color_embed(color_embed, message.content) 
+            await parent.edit(embeds=[new_letter_embed, new_color_embed])
+
+            #delete the message
             try:
-                await message.delete(delay=3)
+                await message.delete()
             except Exception:
                 pass
-            return
-
-        #check that the game is not over
-        if is_game_over(color_embed):
-            await message.reply("The game is over. Start a new game with !wordle", delete_after=3)
-            try:
-                await message.delete(delay=3)
-            except Exception:
-                pass
-            return
-
-        #check that the word is valid
-        if len(message.content.split()) > 1:
-            await message.reply(f"Given {message.content}. Please only enter one 5 letter word.", delete_after = 3)
-            try:
-                await message.delete(delay=3)
-            except Exception:
-                pass
-            return
-        if not is_valid_word(message.content):
-            await message.reply(f"{message.content} is not a valid guess", delete_after = 3)
-            try:
-                await message.delete(delay=3)
-            except Exception:
-                pass
-            return
-
-        #update the embed
-        new_letter_embed = update_letter_embed(letter_embed, message.content) 
-        new_color_embed = update_color_embed(color_embed, message.content) 
-        await parent.edit(embeds=[new_letter_embed, new_color_embed])
-
-        #delete the message
-        try:
-            await message.delete()
-        except Exception:
-            pass
 
     #MUST HAVE PROCESS_COMMANDS so other commands can be done as well
     await bot.process_commands(message)
@@ -225,7 +231,7 @@ async def balance(ctx):
 #example: !pay Jimmers2001 100
 async def pay(ctx, *arr):
     giver = ctx.author.name
-    receiver = arr[0]
+    receiver = arr[0].lower()
     amount = arr[1] #ignore the rest of arr arguments
 
     #confirm the amount is valid
@@ -281,10 +287,11 @@ async def wordle(interaction: nextcord.Interaction):
     #generate a puzzle
     puzzle_id = random_puzzle_id()
 
-    #create the puzzle to display
-    #send the puzzle as an interaction 
+    #create the puzzle to display: a letter only and color only board (need custom emojis to combine)
     letter_embed = generate_empty_embed(interaction.author, puzzle_id)
     color_embed = generate_empty_embed(interaction.author, puzzle_id)
+
+    #send the puzzle as an interaction 
     await interaction.send(embeds=[letter_embed, color_embed])
     
 """
