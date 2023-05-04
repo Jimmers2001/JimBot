@@ -134,21 +134,31 @@ def update_color_embed(embed: nextcord.Embed, guess: str) -> nextcord.Embed:
 
     #check for game over using remaining guesses
     remaining_guesses = embed.description.count(empty_slot)
+    money_made = 0
     if guess == answer:
         if remaining_guesses == 0:
             embed.description += "\n\nClose call Bozo, you kinda suck..."
+            money_made = 1
         elif remaining_guesses == 1:
             embed.description += "\n\nYou are not built different, you are mid..."
+            money_made = 5
         elif remaining_guesses == 2:
             embed.description += "\n\nBet."
+            money_made = 10
         elif remaining_guesses == 3:
             embed.description += "\n\nBIIIIIIIIG :100: :fire: :weary: :sweat_drops:"
+            money_made = 20
         elif remaining_guesses == 4:
             embed.description += "\n\nMOM GET THE CAMERA!"
+            money_made = 100
         elif remaining_guesses == 5:
             embed.description += "\n\ncheck him pc, VAC alert"
+            money_made = 1000
         embed.description += f"\nYou got the answer! It was {answer}."
     elif guess != answer and remaining_guesses == 0:
         embed.description += f"\n\nThe answer was {answer}. You're on the bench now."
+    
+    #amount of money made from wordle
+    embed.add_field(name="winnings", value=money_made)
 
     return embed
