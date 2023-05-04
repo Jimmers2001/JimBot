@@ -50,9 +50,7 @@ def generate_empty_embed(user: nextcord.User, puzzle_id: int) -> nextcord.Embed:
     embed = nextcord.Embed(title="Wordle")
     embed.description = "\n".join([generate_blanks()]*6)
     embed.set_author(name=user.name, icon_url=user.display_avatar.url)
-    embed.set_footer(text=
-        f"ID: {puzzle_id} | Reply to this message with your guesses to play wordle."
-    )
+    embed.set_footer(text=f"ID: {puzzle_id}")
     return embed
 
 #check if a word is valid

@@ -42,12 +42,11 @@ async def initialize_db(guild):
 async def on_ready():  
     print('Bot is ready')
     channel = bot.get_channel(CHANNEL_ID)
-    await channel.send("Hey channel, I'm JimBot and I'm cool!")
-    
     guild = bot.get_guild(GUILD_ID)
 
     #only run initialize_db on the first time the bot runs on the server
     if len(db.keys()) == 0:
+        await channel.send("Hey channel, I'm JimBot and I'm cool!")
         await initialize_db(guild) #only wanna initialize once, if ever ran again it erases everything
 
 #runs every time a message is sent
@@ -153,6 +152,11 @@ async def on_message(message):
     #MUST HAVE PROCESS_COMMANDS so other commands can be done as well
     await bot.process_commands(message)
 
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send(error)
+
 
 #####################################################################################
 #                                    COMMANDS                                       #
@@ -172,7 +176,7 @@ async def add(ctx, *arr):  #argv
 
 
 ##########################################
-#               CONNECTION               #
+#               CONNECTIONS              #
 ##########################################
 
 @bot.command(pass_context=True)
@@ -292,7 +296,8 @@ async def wordle(interaction: nextcord.Interaction):
     color_embed = generate_empty_embed(interaction.author, puzzle_id)
 
     #send the puzzle as an interaction 
-    await interaction.send(embeds=[letter_embed, color_embed])
+    instructions="Reply to this message with your guesses to play wordle."
+    await interaction.send(content=instructions, embeds=[letter_embed, color_embed])
     
 """
 @bot.command()
