@@ -148,6 +148,11 @@ async def on_message(message):
                 await message.delete()
             except Exception:
                 pass
+            
+            #check if the field "winnings" is defined
+            if len(new_color_embed.fields) > 0:
+                ctx = await bot.get_context(message)
+                await bank_update_db(ctx, int(new_color_embed.fields[0].value))
 
     #MUST HAVE PROCESS_COMMANDS so other commands can be done as well
     await bot.process_commands(message)
