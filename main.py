@@ -240,7 +240,7 @@ async def balance(ctx):
 #example: !pay Jimmers2001 100
 async def pay(ctx, *arr):
     giver = ctx.author.name
-    receiver = arr[0].lower()
+    receiver = arr[0]
     amount = arr[1] #ignore the rest of arr arguments
 
     #confirm the amount is valid
@@ -258,8 +258,8 @@ async def pay(ctx, *arr):
     if not receiver in db.keys():
         await ctx.channel.send("Could not find account: " + receiver)
         return
-    if amount < 0:
-        await ctx.channel.send("Cannot give negative amount to " + receiver)
+    if amount <= 0:
+        await ctx.channel.send("Must give positive amount to " + receiver)
         return
 
     #check if the giver has enough to give
