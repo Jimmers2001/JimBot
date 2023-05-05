@@ -103,6 +103,7 @@ async def on_message(message):
         if "wordle" in parent.embeds[0].title.lower():        
             letter_embed = parent.embeds[0]
             color_embed = parent.embeds[1]
+            keyboard_embed = parent.embeds[2]
 
             #check that the correct user is playing the game
             if color_embed.author.name != message.author.name:
@@ -141,7 +142,8 @@ async def on_message(message):
             #update the embed
             new_letter_embed = update_letter_embed(letter_embed, message.content) 
             new_color_embed = update_color_embed(color_embed, message.content) 
-            await parent.edit(embeds=[new_letter_embed, new_color_embed])
+            new_keyboard_embed = update_keyboard_embed(keyboard_embed, message.content)
+            await parent.edit(embeds=[new_letter_embed, new_color_embed, new_keyboard_embed])
 
             #delete the message
             try:
@@ -160,7 +162,11 @@ async def on_message(message):
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
-        await ctx.send(error)
+        await ctx.send(error, delete_after=3)
+        try:
+            await ctx.delete(delay=3)
+        except Exception:
+            pass
 
 
 #####################################################################################
@@ -169,7 +175,8 @@ async def on_command_error(ctx, error):
 
 @bot.command()
 async def hello(ctx):  #argv
-    await ctx.send("Hiya")
+    greetings: str = "Hi, 嘿，你這個男孩, Hey there, Mornin', Howdy, G'day, Wazzapnin, Yo., Hiya, Whats good, Whats up, Howdy"
+    await ctx.send(random.choice(greetings.split(", ")))
 
 
 @bot.command()
@@ -224,6 +231,7 @@ async def bank_update_db(ctx, amount):
 @bot.command(aliases=['blb', 'leaderboard'])
 async def bank_leaderboard(ctx):
     if (len(db.keys()) == 0):
+       #should never happen
        await ctx.channel.send("No bank users yet")
        return
     for i in db.keys():
@@ -276,7 +284,7 @@ async def pay(ctx, *arr):
         await ctx.channel.send(embed=embed)
 
     else:
-        await ctx.channel.send(giver + " is too poor to give $" + str(amount) + " to " + receiver)
+        await ctx.channel.send(giver + " is too *poor* to give $" + str(amount) + " to " + receiver + "\n(i dont talk to broke boys)")
         return
 
 
@@ -299,10 +307,11 @@ async def wordle(interaction: nextcord.Interaction):
     #create the puzzle to display: a letter only and color only board (need custom emojis to combine)
     letter_embed = generate_empty_embed(interaction.author, puzzle_id)
     color_embed = generate_empty_embed(interaction.author, puzzle_id)
+    keyboard_embed = generate_keyboard_embed(interaction.author)
 
     #send the puzzle as an interaction 
     instructions="Reply to this message with your guesses to play wordle."
-    await interaction.send(content=instructions, embeds=[letter_embed, color_embed])
+    await interaction.send(content=instructions, embeds=[letter_embed, color_embed, keyboard_embed])
     
 """
 @bot.command()

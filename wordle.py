@@ -45,6 +45,17 @@ def generate_blanks() -> str:
     #return a string of 5 blank emoji characters
     return "\N{WHITE MEDIUM SQUARE}" * 5
 
+def generate_keyboard_embed(user: nextcord.User) -> nextcord.Embed:
+    embed = nextcord.Embed(title="Keyboard")
+    keyboard_emojis = (
+        EMOJI_CODES["q"]+EMOJI_CODES["w"]+EMOJI_CODES["e"]+EMOJI_CODES["r"]+EMOJI_CODES["t"]+EMOJI_CODES["y"]+EMOJI_CODES["u"]+EMOJI_CODES["i"]+EMOJI_CODES["o"]+EMOJI_CODES["p"]+"\n"
+        +" "+EMOJI_CODES["a"]+EMOJI_CODES["s"]+EMOJI_CODES["d"]+EMOJI_CODES["f"]+EMOJI_CODES["g"]+EMOJI_CODES["h"]+EMOJI_CODES["j"]+EMOJI_CODES["k"]+EMOJI_CODES["l"]+"\n"
+        +"  "+EMOJI_CODES["z"]+EMOJI_CODES["x"]+EMOJI_CODES["c"]+EMOJI_CODES["v"]+EMOJI_CODES["b"]+EMOJI_CODES["n"]+EMOJI_CODES["m"]
+    )
+    embed.description = keyboard_emojis###############################
+    embed.set_author(name=user.name, icon_url=user.display_avatar.url)
+    return embed
+
 #make an entirely empty board
 def generate_empty_embed(user: nextcord.User, puzzle_id: int) -> nextcord.Embed:
     embed = nextcord.Embed(title="Wordle")
@@ -91,29 +102,39 @@ def generate_colored_word(guess: str, answer: str) -> list:
             answer_letters[answer_letters.index(guess_letters[i])] = None
     return colored_letters
 
-#converts the inputted list of inputs into a string of emojis
-def generate_emojis(input: list) -> str:
-    emojis = ""
+#converts the inputted list of input characters/words into a list of emojis
+def generate_emoji_letters(input: list) -> list:
+    emojis = []
     for word in input:
         #they represent colors like "gray", "yellow", or "green"
         if len(input) > 1:
-            emojis += EMOJI_CODES[word]
+            emojis.append(EMOJI_CODES[word])
 
         #it represents a character in a word
         else:
             for letter in word:
-                emojis += EMOJI_CODES[letter]
+                emojis.append(EMOJI_CODES[letter])
     
     return emojis
 
 #updates the embed that only has letters
 def update_letter_embed(embed: nextcord.Embed, guess: str) -> nextcord.Embed:
     #convert the guess into emojis
-    letter_emojis = generate_emojis([guess])
+    letter_emojis = "".join(generate_emoji_letters([guess]))
     empty_slot = generate_blanks()
 
     #replace the next blank found with the guess as emojis
     embed.description = embed.description.replace(empty_slot, letter_emojis, 1)
+    return embed
+
+#updates the embed that has the keyboard with unused letters
+def update_keyboard_embed(embed: nextcord.Embed, guess: str) -> nextcord.Embed:
+    #get the emojis of the letters used in this guess
+    emojis = generate_emoji_letters([guess])
+    for emoji in emojis:
+        #replace each of these emojis from the keyboard with empty
+        embed.description = embed.description.replace(emoji, ":black_large_square:", 1)
+
     return embed
 
 #updates the embed that has colors 
@@ -126,7 +147,7 @@ def update_color_embed(embed: nextcord.Embed, guess: str) -> nextcord.Embed:
     colored_word_list = generate_colored_word(guess, answer)
 
     #convert the colored_word_list strings into emojis
-    colored_emojis = generate_emojis(colored_word_list)
+    colored_emojis = "".join(generate_emoji_letters(colored_word_list))
     empty_slot = generate_blanks()
 
     #replace the first blank with the colored word
