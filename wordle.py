@@ -49,8 +49,8 @@ def generate_keyboard_embed(user: nextcord.User) -> nextcord.Embed:
     embed = nextcord.Embed(title="Keyboard")
     keyboard_emojis = (
         EMOJI_CODES["q"]+EMOJI_CODES["w"]+EMOJI_CODES["e"]+EMOJI_CODES["r"]+EMOJI_CODES["t"]+EMOJI_CODES["y"]+EMOJI_CODES["u"]+EMOJI_CODES["i"]+EMOJI_CODES["o"]+EMOJI_CODES["p"]+"\n"
-        +" "+EMOJI_CODES["a"]+EMOJI_CODES["s"]+EMOJI_CODES["d"]+EMOJI_CODES["f"]+EMOJI_CODES["g"]+EMOJI_CODES["h"]+EMOJI_CODES["j"]+EMOJI_CODES["k"]+EMOJI_CODES["l"]+"\n"
-        +"  "+EMOJI_CODES["z"]+EMOJI_CODES["x"]+EMOJI_CODES["c"]+EMOJI_CODES["v"]+EMOJI_CODES["b"]+EMOJI_CODES["n"]+EMOJI_CODES["m"]
+        +EMOJI_CODES["a"]+EMOJI_CODES["s"]+EMOJI_CODES["d"]+EMOJI_CODES["f"]+EMOJI_CODES["g"]+EMOJI_CODES["h"]+EMOJI_CODES["j"]+EMOJI_CODES["k"]+EMOJI_CODES["l"]+"\n"
+        +":black_small_square:"+EMOJI_CODES["z"]+EMOJI_CODES["x"]+EMOJI_CODES["c"]+EMOJI_CODES["v"]+EMOJI_CODES["b"]+EMOJI_CODES["n"]+EMOJI_CODES["m"]
     )
     embed.description = keyboard_emojis###############################
     embed.set_author(name=user.name, icon_url=user.display_avatar.url)
