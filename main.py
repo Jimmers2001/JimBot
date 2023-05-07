@@ -154,7 +154,7 @@ async def on_message(message):
 
             #delete the message
             try:
-                await message.delete()
+                await message.delete(delay=3)
             except Exception:
                 print("Could not delete in wordle")
                 pass
@@ -172,7 +172,7 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         await ctx.send(error, delete_after=3)
         try:
-            await ctx.delete(delay=3)
+            await ctx.message.delete(delay=3)
         except Exception:
             print("Could not delete in on command error")
             pass
@@ -190,15 +190,15 @@ async def help(ctx, *, command=None):
         if not cmd:
             await ctx.send(f"Command '{command}' not found.", delete_after=3)
             try:
-                await ctx.delete(delay=3)
+                await ctx.message.delete(delay=3)
             except Exception:
                 print("Could not delete in help")
                 pass
             return
         embed = nextcord.Embed(title=f"{command} Command description", description=cmd.description, color=0x00ff00)
-        await ctx.send(embed=embed, delete_after=60)
+        await ctx.send(embed=embed, delete_after=600)
         try:
-            await ctx.delete(delay=3)
+            await ctx.message.delete(delay=3)
         except Exception:
             print("Could not delete in help")
             pass
@@ -221,9 +221,9 @@ async def add(ctx, *arr):  #argv
     result = 0
     for i in arr:
         result += int(i)
-    await ctx.send(f"Result = {result}", delete_after=600)
+    await ctx.send(f"Result = {result}", delete_after=60)
     try:
-        await ctx.delete(delay=600)
+        await ctx.message.delete(delay=60)
     except Exception as e:
         print(f"An exception occurred in add: {e}")
         traceback.print_exc()
@@ -243,7 +243,7 @@ async def join(ctx):
         await channel.connect()
         await ctx.send("Joined the voice channel", delete_after=3)
         try:
-            await ctx.delete(delay=3)
+            await ctx.message.delete(delay=3)
         except Exception:
             print("Could not delete in join")
             pass
@@ -252,7 +252,7 @@ async def join(ctx):
     else:
         await ctx.send("You are not in a voice channel", delete_after=3)
         try:
-            await ctx.delete(delay=3)
+            await ctx.message.delete(delay=3)
         except Exception:
             print("Could not delete in join")
             pass
@@ -268,7 +268,7 @@ async def leave(ctx):
     else:
         await ctx.send("Cannot leave the voice channel since I am not in one.", delete_after=3)
         try:
-            await ctx.delete(delay=3)
+            await ctx.message.delete(delay=3)
         except Exception:
             print("Could not delete in leave")
             pass
@@ -299,7 +299,7 @@ async def leaderboard(ctx):
         #should never happen
         await ctx.channel.send("No bank users yet", delete_after=3)
         try:
-            await ctx.delete(delay=3)
+            await ctx.message.delete(delay=3)
         except Exception:
             print("Could not delete in leaderboard")
             pass
@@ -310,6 +310,12 @@ async def leaderboard(ctx):
         amount = db[user]
         leaderboard_string += user + " has $" + str(amount)+"\n"
     await ctx.channel.send(leaderboard_string)
+    try:
+        await ctx.message.delete(delay=3)
+    except Exception:
+        print("Could not delete in leaderboard")
+        pass
+    return
 
 @bot.command(description="displays your bank account balance", aliases=['bal'])
 async def balance(ctx):
@@ -327,7 +333,7 @@ async def pay(ctx, *arr):
     if not amount.isnumeric():
         await ctx.channel.send("Invalid amount: " + amount, delete_after=3)
         try:
-            await ctx.delete(delay=3)
+            await ctx.message.delete(delay=3)
         except Exception:
             print("Could not delete in pay")
             pass
@@ -350,7 +356,7 @@ async def pay(ctx, *arr):
 
     if bad_command:
         try:
-            await ctx.delete(delay=3)
+            await ctx.message.delete(delay=3)
         except Exception:
             print("Could not delete in pay")
             pass
@@ -368,11 +374,17 @@ async def pay(ctx, *arr):
         )
 
         await ctx.channel.send(embed=embed)
+        try:
+            await ctx.message.delete(delay=3)
+        except Exception:
+            print("Could not delete in leaderboard")
+            pass
+        return
 
     else:
         await ctx.channel.send(giver + " is too *poor* to give $" + str(amount) + " to " + receiver + "\n(i dont talk to broke boys)", delete_after=3)
         try:
-            await ctx.delete(delay=3)
+            await ctx.message.delete(delay=3)
         except Exception:
             print("Could not delete in pay")
             pass
@@ -387,8 +399,15 @@ async def pay(ctx, *arr):
 async def exercise(ctx): 
     await ctx.channel.send(str(ctx.author.name) + " has to do 10 pushups/squats for $50", delete_after=60)
     await asyncio.sleep(30)
-    await ctx.channel.send(str(ctx.author.name) + " better have done 10 pushups/squats... here's $50! :muscle:", delete_after=60)
+    await ctx.channel.send(str(ctx.author.name) + " better have done 10 pushups/squats... here's $50! :muscle:")
     await bank_update_db(ctx, 50)
+    try:
+        await ctx.message.delete(delay=3)
+    except Exception:
+        print("Could not delete in pay")
+        pass
+    
+    
 
 @bot.command(description="play wordle")
 async def wordle(interaction: nextcord.Interaction):
@@ -437,12 +456,23 @@ async def agent(ctx):
         "Sage", "Jett", "Reyna", "Raze", "Breach", "Skye", "Yoru", "Astra", "KAYO",
         "Chamber", "Neon", "Fade", "Harbor", "Gekko"]
     agent = random.choice(agents)
-    await ctx.channel.send(str(ctx.author.name) + " should play " + agent, delete_after=60)
+    await ctx.channel.send(str(ctx.author.name) + " should play " + agent, delete_after=600)
+    try:
+        await ctx.message.delete(delay=10)
+    except Exception:
+        print("Could not delete agent")
+        pass
+    
 
 @bot.command(description="flip a coin", aliases=['flipcoin', 'coinflip', 'coin'])
 async def flip(ctx):
     coin = random.choice(['Heads', 'Tails'])
-    await ctx.send(f"{coin}!")
+    await ctx.send(f"{coin}!", delete_after=60)
+    try:
+        await ctx.message.delete(delay=60)
+    except Exception:
+        print("Could not delete in pay")
+        pass
 
 #loop and continuously run until the bot is ended
 keep_alive() #creates a replit url that we constantly ping using uptimerobot to keep the bot active and running
