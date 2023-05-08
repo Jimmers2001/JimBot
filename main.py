@@ -1,25 +1,19 @@
-#from discord.ext import commands
-#import discord
-import traceback
 from playsound import playsound
 #from discord import FFmpegPCMAudio
-import asyncio
-import os
-from replit import db
+import asyncio, nextcord, os, replit, random
 from keep_alive import keep_alive
-import random
-import nextcord
 from nextcord.ext import commands
-#from play_wordle import play_wordle
 from wordle import *
-#get unique bot and channel ids from .env file
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")  #must be string
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))  #must be integer
 GUILD_ID = int(os.getenv("GUILD_ID"))
+REPLIT_DB_URL = os.getenv("REPLIT_DB_URL")
+db = replit.database.Database(REPLIT_DB_URL)
+
 
 #initialize bot that intents to use all discord features
 bot = commands.Bot(command_prefix="!", intents=nextcord.Intents.all())
@@ -55,6 +49,11 @@ async def on_ready():
     if len(db.keys()) == 0:
         await channel.send("Hey channel, I'm JimBot and I'm cool!")
         await initialize_db(guild) #only wanna initialize once, if ever ran again it erases everything
+
+    print("DATABASE:")
+    # Loop through the list and print each pair
+    for user, amount in db.items():
+        print(user, amount)
 
 #runs every time a message is sent
 @bot.event
@@ -163,7 +162,7 @@ async def on_command_error(ctx, error):
 #####################################################################################
 
 @bot.command(description="You can figure that out")
-async def help(ctx, *, command=None):
+async def help(ctx, *, command=None): #* forces command to be a "keyword" type and helps with error checking
     # If a specific command is passed as an argument, print out only its description text
     if command:
         cmd = bot.get_command(command)
@@ -248,19 +247,24 @@ async def bank_update_db(ctx, amount):
     if original_bal > 0 and db[user] < 0:
         await ctx.channel.send(":crab: " + user + " has gone bankrupt! :crab:")
 
-@bot.command(description="displays the bank accounts of all users", aliases=['blb', 'bank_leaderboard'])
+@bot.command(description="displays the bank accounts of all users", aliases=['lb', 'blb', 'bank_leaderboard'])
 async def leaderboard(ctx):
     if (len(db.keys()) == 0):
         #should never happen
         await ctx.channel.send("No bank users yet", delete_after=3)
         await delete_message(ctx, 3)
         return
-    leaderboard_string: str = ""
-    for i in db.keys():
-        user = i
-        amount = db[user]
-        leaderboard_string += user + " has $" + str(amount)+"\n"
-    await ctx.channel.send(leaderboard_string)
+    
+    #make embedded message
+    embed = nextcord.Embed(title="Leaderboard", color=0xff0000)
+    index = 1
+    sorted_users = sorted(db.items(), key=lambda x: x[1], reverse=True)
+    for user, amount in sorted_users:
+        embed.add_field(name=f"{index}. {user}", value=f"${amount}", inline=False)
+        index += 1
+    
+    await ctx.send(embed=embed)
+
     await delete_message(ctx, 3)
     return
 
