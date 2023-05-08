@@ -19,14 +19,13 @@ db = replit.database.Database(REPLIT_DB_URL)
 bot = commands.Bot(command_prefix="!", intents=nextcord.Intents.all())
 bot.remove_command('help') #remove the default help and replace it with my own later
 
-#empty db and initialize all users with $1000
+#empty db and initialize all users with money
 async def initialize_db(guild):
     db.clear() #emptying it loses all data
     for member in guild.members:
         db[member.name] = 420
         if member.id == bot.user.id:
             db[member.name] = 0
-    sorted(db, reverse=True)
 
 async def delete_message(ctx, delay):
     try:
@@ -114,23 +113,23 @@ async def on_message(message):
             #check that the correct user is playing the game
             if color_embed.author.name != message.author.name:
                 await message.reply(f"Get your own game bruh, {color_embed.author.name} is in the middle of clutching up.", delete_after=3)
-                await delete_message(ctx, 3)
+                await delete_message(ctx, 10)
                 return
 
             #check that the game is not over
             if is_game_over(color_embed):
                 await message.reply("The game is over. Start a new game with !wordle", delete_after=3)
-                await delete_message(ctx, 3)
+                await delete_message(ctx, 10)
                 return
 
             #check that the word is valid
             if len(message.content.split()) > 1:
                 await message.reply(f"Given {message.content}. Please only enter one 5 letter word.", delete_after = 3)
-                await delete_message(ctx, 3)
+                await delete_message(ctx, 10)
                 return
             if not is_valid_word(message.content):
                 await message.reply(f"{message.content} is not a valid guess", delete_after = 3)
-                await delete_message(ctx, 3)
+                await delete_message(ctx, 10)
                 return
 
             #update the embed
@@ -140,7 +139,7 @@ async def on_message(message):
             await parent.edit(embeds=[new_letter_embed, new_color_embed, new_keyboard_embed])
 
             #delete the message
-            await delete_message(ctx, 3)
+            await delete_message(ctx, 10)
             
             #check if the field "winnings" is defined
             if len(new_color_embed.fields) > 0:
@@ -154,25 +153,25 @@ async def on_message(message):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         await ctx.send(error, delete_after=3)
-        await delete_message(ctx, 3)
+        await delete_message(ctx, 10)
 
 
 #####################################################################################
 #                                    COMMANDS                                       #
 #####################################################################################
 
-@bot.command(description="You can figure that out")
+@bot.command(description="I'll let you figure that out")
 async def help(ctx, *, command=None): #* forces command to be a "keyword" type and helps with error checking
     # If a specific command is passed as an argument, print out only its description text
     if command:
         cmd = bot.get_command(command)
         if not cmd:
             await ctx.send(f"Command '{command}' not found.", delete_after=3)
-            await delete_message(ctx, 3)
+            await delete_message(ctx, 10)
             return
         embed = nextcord.Embed(title=f"{command} Command description", description=cmd.description, color=0x00ff00)
         await ctx.send(embed=embed, delete_after=60)
-        await delete_message(ctx, 3)
+        await delete_message(ctx, 10)
         return
 
     # If no command is passed, print out a list of all commands and their description text
@@ -183,7 +182,17 @@ async def help(ctx, *, command=None): #* forces command to be a "keyword" type a
 
 @bot.command(description="greets you")
 async def hello(ctx):  #argv
-    greetings: str = "Hi, 嘿，你這個男孩, Hey there, Mornin', Howdy, G'day, Wazzapnin, Yo., Hiya, Whats good, Whats up, Howdy"
+    greetings: str = "Hello, Hi, Hey, Yo, What's up, Greetings, Salaam, Namaste, Bonjour, \
+        Hola, Ciao, Konnichiwa, Ni hao, Merhaba, Sawubona, Shalom, Hallo, Privet, Ahlan, Sveiki,\
+        Zdravstvuyte, Kia ora, Xin chào, Selamat pagi, Marhaba, Kumusta, Sannu, Dumelang, \
+        Jambo, Bawoni, Sawatdee, Saumia, Habari, Dumela, Shwmae, Hi, 嘿，你這個男孩, \
+        Hey there, Mornin', Howdy, G'day, Wazzapnin, Yo., Hiya, Whats good, Whats up, \
+        Howdy, Salut,Moin,Hoi,Ola,Ciao,Merhaba,Sawubona,Përshëndetje,Bok,Kumusta,Sveiki,Labas, \
+        Sholem aleikhem,Hallo,Salve,Ahoj,Hej,Dobrý den, Marhabaan,Yasou,Hei,Sannu,Nǐ hǎo,Terve,\
+        Hejhej,Aksunai,Dia dhuit,Dobro jutro,Dzień dobry,Xaipete,Salamu alaikum,Mirëdita,\
+        Sannu da zuwa,Zdravstvuyte,Shwmae,Moïen,Sveikas,Moi,Moien,Goede dag,Moïen,Szia,\
+        Hej alla,Nǐn hǎo,Hejhej,Привет,Xayrli tong,Cześć,Merhabalar,Hello"
+
     await ctx.send(random.choice(greetings.split(", ")))
 
 
@@ -197,7 +206,6 @@ async def add(ctx, *arr):  #argv
     return
     
 
-
 ##########################################
 #               CONNECTIONS              #
 ##########################################
@@ -208,14 +216,11 @@ async def join(ctx):
         channel = ctx.message.author.voice.channel
         await channel.connect()
         await ctx.send("Joined the voice channel", delete_after=3)
-        await delete_message(ctx, 3)
-        return
+        await delete_message(ctx, 10)
 
     else:
         await ctx.send("You are not in a voice channel", delete_after=3)
-        await delete_message(ctx, 3)
-        return
-        
+        await delete_message(ctx, 10)        
 
 
 @bot.command(pass_context=True, description="disconnects the bot from the call", aliases=['disconnect', 'die', 'kill'])
@@ -223,10 +228,10 @@ async def leave(ctx):
     if (ctx.voice_client):
         await ctx.guild.voice_client.disconnect()
         await ctx.send("Left the voice channel", delete_after=3)
+    
     else:
         await ctx.send("Cannot leave the voice channel since I am not in one.", delete_after=3)
-        await delete_message(ctx, 3)
-        return
+        await delete_message(ctx, 10)
 
 ##########################################
 #               FINANCES                 #
@@ -242,7 +247,7 @@ async def bank_update_db(ctx, amount):
     else:
         #only happens if a user joins after the bot started running
         #so in practice should be never
-        db[user] = 1000 + amount
+        db[user] = 420 + amount
 
     if original_bal > 0 and db[user] < 0:
         await ctx.channel.send(":crab: " + user + " has gone bankrupt! :crab:")
@@ -252,7 +257,7 @@ async def leaderboard(ctx):
     if (len(db.keys()) == 0):
         #should never happen
         await ctx.channel.send("No bank users yet", delete_after=3)
-        await delete_message(ctx, 3)
+        await delete_message(ctx, 10)
         return
     
     #make embedded message
@@ -265,7 +270,7 @@ async def leaderboard(ctx):
     
     await ctx.send(embed=embed)
 
-    await delete_message(ctx, 3)
+    await delete_message(ctx, 10)
     return
 
 @bot.command(description="displays your bank account balance", aliases=['bal'])
@@ -287,7 +292,7 @@ async def pay(ctx, *arr):
     #confirm the amount is valid
     if not amount.isnumeric():
         await ctx.channel.send("Invalid amount: " + amount, delete_after=3)
-        await delete_message(ctx, 3)
+        await delete_message(ctx, 10)
         return
     amount = int(arr[1])
 
@@ -306,7 +311,7 @@ async def pay(ctx, *arr):
         bad_command=True
 
     if bad_command:
-        await delete_message(ctx, 3)
+        await delete_message(ctx, 10)
         return
 
     #check if the giver has enough to give
@@ -321,12 +326,12 @@ async def pay(ctx, *arr):
         )
 
         await ctx.channel.send(embed=embed)
-        await delete_message(ctx, 3)
+        await delete_message(ctx, 10)
         return
 
     else:
         await ctx.channel.send(giver + " is too *poor* to give $" + str(amount) + " to " + receiver + "\n(i dont talk to broke boys)", delete_after=3)
-        await delete_message(ctx, 3)
+        await delete_message(ctx, 10)
         return
 
 
@@ -340,7 +345,7 @@ async def exercise(ctx):
     await asyncio.sleep(40)
     await ctx.channel.send(str(ctx.author.name) + " better have done 10 pushups/squats... here's $50! :muscle:")
     await bank_update_db(ctx, 50)
-    await delete_message(ctx, 3)
+    await delete_message(ctx, 10)
     
     
 
@@ -358,6 +363,7 @@ async def wordle(interaction: nextcord.Interaction):
     instructions="Reply to this message with your guesses to play wordle."
     await interaction.send(content=instructions, embeds=[letter_embed, color_embed, keyboard_embed])
     #unable to delete the original message in the interaction
+
 """
 @bot.command()
 #example: !play blackjack 100
@@ -385,6 +391,7 @@ async def play(ctx, *arr):
     #for now, just always win and double the bet
     await bank_update_db(ctx, bet)
 """
+
 @bot.command(description="randomly choose an agent", aliases=['pick'])
 async def agent(ctx):
     agents = ["Brimstone", "Viper", "Omen", "Killjoy", "Cypher", "Phoenix", "Sova",
