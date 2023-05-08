@@ -25,7 +25,6 @@ GUILD_ID = int(os.getenv("GUILD_ID"))
 bot = commands.Bot(command_prefix="!", intents=nextcord.Intents.all())
 bot.remove_command('help') #remove the default help and replace it with my own later
 
-      
 #empty db and initialize all users with $1000
 async def initialize_db(guild):
     db.clear() #emptying it loses all data
@@ -35,6 +34,11 @@ async def initialize_db(guild):
             db[member.name] = 0
     sorted(db, reverse=True)
 
+async def delete_message(ctx, delay):
+    try:
+        await ctx.message.delete(delay=delay)
+    except Exception as e:
+        print("Could not delete the original message.", e)
 
 #####################################################################################
 #                                    EVENTS                                         #
@@ -111,39 +115,23 @@ async def on_message(message):
             #check that the correct user is playing the game
             if color_embed.author.name != message.author.name:
                 await message.reply(f"Get your own game bruh, {color_embed.author.name} is in the middle of clutching up.", delete_after=3)
-                try:
-                    await message.delete(delay=3)
-                except Exception:
-                    print("Could not delete in wordle")
-                    pass
+                await delete_message(ctx, 3)
                 return
 
             #check that the game is not over
             if is_game_over(color_embed):
                 await message.reply("The game is over. Start a new game with !wordle", delete_after=3)
-                try:
-                    await message.delete(delay=3)
-                except Exception:
-                    print("Could not delete in wordle")
-                    pass
+                await delete_message(ctx, 3)
                 return
 
             #check that the word is valid
             if len(message.content.split()) > 1:
                 await message.reply(f"Given {message.content}. Please only enter one 5 letter word.", delete_after = 3)
-                try:
-                    await message.delete(delay=3)
-                except Exception:
-                    print("Could not delete in wordle")
-                    pass
+                await delete_message(ctx, 3)
                 return
             if not is_valid_word(message.content):
                 await message.reply(f"{message.content} is not a valid guess", delete_after = 3)
-                try:
-                    await message.delete(delay=3)
-                except Exception:
-                    print("Could not delete in wordle")
-                    pass
+                await delete_message(ctx, 3)
                 return
 
             #update the embed
@@ -153,11 +141,7 @@ async def on_message(message):
             await parent.edit(embeds=[new_letter_embed, new_color_embed, new_keyboard_embed])
 
             #delete the message
-            try:
-                await message.delete(delay=3)
-            except Exception:
-                print("Could not delete in wordle")
-                pass
+            await delete_message(ctx, 3)
             
             #check if the field "winnings" is defined
             if len(new_color_embed.fields) > 0:
@@ -171,11 +155,7 @@ async def on_message(message):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         await ctx.send(error, delete_after=3)
-        try:
-            await ctx.message.delete(delay=3)
-        except Exception:
-            print("Could not delete in on command error")
-            pass
+        await delete_message(ctx, 3)
 
 
 #####################################################################################
@@ -189,26 +169,18 @@ async def help(ctx, *, command=None):
         cmd = bot.get_command(command)
         if not cmd:
             await ctx.send(f"Command '{command}' not found.", delete_after=3)
-            try:
-                await ctx.message.delete(delay=3)
-            except Exception:
-                print("Could not delete in help")
-                pass
+            await delete_message(ctx, 3)
             return
         embed = nextcord.Embed(title=f"{command} Command description", description=cmd.description, color=0x00ff00)
-        await ctx.send(embed=embed, delete_after=600)
-        try:
-            await ctx.message.delete(delay=3)
-        except Exception:
-            print("Could not delete in help")
-            pass
+        await ctx.send(embed=embed, delete_after=60)
+        await delete_message(ctx, 3)
         return
 
     # If no command is passed, print out a list of all commands and their description text
     embed = nextcord.Embed(title="Command List", color=0x00ff00)
     for cmd in bot.commands:
         embed.add_field(name=f"**{cmd.name}**", value=cmd.description or "No description available", inline=False)
-    await ctx.send(embed=embed, delete_after=30)
+    await ctx.send(embed=embed, delete_after=600)
 
 @bot.command(description="greets you")
 async def hello(ctx):  #argv
@@ -222,12 +194,7 @@ async def add(ctx, *arr):  #argv
     for i in arr:
         result += int(i)
     await ctx.send(f"Result = {result}", delete_after=60)
-    try:
-        await ctx.message.delete(delay=60)
-    except Exception as e:
-        print(f"An exception occurred in add: {e}")
-        traceback.print_exc()
-        pass
+    await delete_message(ctx, 60)
     return
     
 
@@ -242,20 +209,12 @@ async def join(ctx):
         channel = ctx.message.author.voice.channel
         await channel.connect()
         await ctx.send("Joined the voice channel", delete_after=3)
-        try:
-            await ctx.message.delete(delay=3)
-        except Exception:
-            print("Could not delete in join")
-            pass
+        await delete_message(ctx, 3)
         return
 
     else:
         await ctx.send("You are not in a voice channel", delete_after=3)
-        try:
-            await ctx.message.delete(delay=3)
-        except Exception:
-            print("Could not delete in join")
-            pass
+        await delete_message(ctx, 3)
         return
         
 
@@ -267,11 +226,7 @@ async def leave(ctx):
         await ctx.send("Left the voice channel", delete_after=3)
     else:
         await ctx.send("Cannot leave the voice channel since I am not in one.", delete_after=3)
-        try:
-            await ctx.message.delete(delay=3)
-        except Exception:
-            print("Could not delete in leave")
-            pass
+        await delete_message(ctx, 3)
         return
 
 ##########################################
@@ -298,11 +253,7 @@ async def leaderboard(ctx):
     if (len(db.keys()) == 0):
         #should never happen
         await ctx.channel.send("No bank users yet", delete_after=3)
-        try:
-            await ctx.message.delete(delay=3)
-        except Exception:
-            print("Could not delete in leaderboard")
-            pass
+        await delete_message(ctx, 3)
         return
     leaderboard_string: str = ""
     for i in db.keys():
@@ -310,11 +261,7 @@ async def leaderboard(ctx):
         amount = db[user]
         leaderboard_string += user + " has $" + str(amount)+"\n"
     await ctx.channel.send(leaderboard_string)
-    try:
-        await ctx.message.delete(delay=3)
-    except Exception:
-        print("Could not delete in leaderboard")
-        pass
+    await delete_message(ctx, 3)
     return
 
 @bot.command(description="displays your bank account balance", aliases=['bal'])
@@ -325,6 +272,10 @@ async def balance(ctx):
 @bot.command(description="pay another user with !pay <user> <amount>")
 #example: !pay Jimmers2001 100
 async def pay(ctx, *arr):
+    #check for receiver and amount info
+    if len(arr) < 2:
+        await ctx.send("Please provide <user> <amount> information.")
+        return
     giver = ctx.author.name
     receiver = arr[0]
     amount = arr[1] #ignore the rest of arr arguments
@@ -332,11 +283,7 @@ async def pay(ctx, *arr):
     #confirm the amount is valid
     if not amount.isnumeric():
         await ctx.channel.send("Invalid amount: " + amount, delete_after=3)
-        try:
-            await ctx.message.delete(delay=3)
-        except Exception:
-            print("Could not delete in pay")
-            pass
+        await delete_message(ctx, 3)
         return
     amount = int(arr[1])
 
@@ -355,11 +302,7 @@ async def pay(ctx, *arr):
         bad_command=True
 
     if bad_command:
-        try:
-            await ctx.message.delete(delay=3)
-        except Exception:
-            print("Could not delete in pay")
-            pass
+        await delete_message(ctx, 3)
         return
 
     #check if the giver has enough to give
@@ -374,20 +317,12 @@ async def pay(ctx, *arr):
         )
 
         await ctx.channel.send(embed=embed)
-        try:
-            await ctx.message.delete(delay=3)
-        except Exception:
-            print("Could not delete in leaderboard")
-            pass
+        await delete_message(ctx, 3)
         return
 
     else:
         await ctx.channel.send(giver + " is too *poor* to give $" + str(amount) + " to " + receiver + "\n(i dont talk to broke boys)", delete_after=3)
-        try:
-            await ctx.message.delete(delay=3)
-        except Exception:
-            print("Could not delete in pay")
-            pass
+        await delete_message(ctx, 3)
         return
 
 
@@ -398,14 +333,10 @@ async def pay(ctx, *arr):
 @bot.command(description="workout for money (you could use it)", aliases=['pushups', 'squats'])
 async def exercise(ctx): 
     await ctx.channel.send(str(ctx.author.name) + " has to do 10 pushups/squats for $50", delete_after=60)
-    await asyncio.sleep(30)
+    await asyncio.sleep(40)
     await ctx.channel.send(str(ctx.author.name) + " better have done 10 pushups/squats... here's $50! :muscle:")
     await bank_update_db(ctx, 50)
-    try:
-        await ctx.message.delete(delay=3)
-    except Exception:
-        print("Could not delete in pay")
-        pass
+    await delete_message(ctx, 3)
     
     
 
@@ -422,7 +353,7 @@ async def wordle(interaction: nextcord.Interaction):
     #send the puzzle as an interaction 
     instructions="Reply to this message with your guesses to play wordle."
     await interaction.send(content=instructions, embeds=[letter_embed, color_embed, keyboard_embed])
-    
+    #unable to delete the original message in the interaction
 """
 @bot.command()
 #example: !play blackjack 100
@@ -456,23 +387,14 @@ async def agent(ctx):
         "Sage", "Jett", "Reyna", "Raze", "Breach", "Skye", "Yoru", "Astra", "KAYO",
         "Chamber", "Neon", "Fade", "Harbor", "Gekko"]
     agent = random.choice(agents)
-    await ctx.channel.send(str(ctx.author.name) + " should play " + agent, delete_after=600)
-    try:
-        await ctx.message.delete(delay=10)
-    except Exception:
-        print("Could not delete agent")
-        pass
-    
+    await ctx.channel.send(str(ctx.author.name) + " should play " + agent, delete_after=90)
+    await delete_message(ctx, 10)
 
 @bot.command(description="flip a coin", aliases=['flipcoin', 'coinflip', 'coin'])
 async def flip(ctx):
     coin = random.choice(['Heads', 'Tails'])
     await ctx.send(f"{coin}!", delete_after=60)
-    try:
-        await ctx.message.delete(delay=60)
-    except Exception:
-        print("Could not delete in pay")
-        pass
+    await delete_message(ctx, 30)
 
 #loop and continuously run until the bot is ended
 keep_alive() #creates a replit url that we constantly ping using uptimerobot to keep the bot active and running
