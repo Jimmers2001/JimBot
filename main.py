@@ -4,6 +4,7 @@ import asyncio, nextcord, os, replit, random
 from keep_alive import keep_alive
 from nextcord.ext import commands
 from wordle import *
+#from user import *
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,13 +20,37 @@ db = replit.database.Database(REPLIT_DB_URL)
 bot = commands.Bot(command_prefix="!", intents=nextcord.Intents.all())
 bot.remove_command('help') #remove the default help and replace it with my own later
 
+def print_dictionary(d:dict) -> dict:
+    """Prints a dictionary in a prettier format"""
+    for key, value in d.items():
+        print(f"{key}: {value}")
+    print("\n")
+
+
+def make_dictionary(name:str, balance=420, wordle_wins=0, times_exercised=0, inventory=[], xp=0) -> dict:
+    """Creates and returns a dictionary representing a user"""
+    d = dict()
+    d["name"] = name
+    d["balance"] = balance
+    d["wordle_wins"] = wordle_wins
+    d["times_exercised"] = times_exercised
+    d["inventory"] = inventory
+    d["xp"] = xp
+    return d
+
 #empty db and initialize all users with money
-async def initialize_db(guild):
+def initialize_db(guild):
+    """Empties and initializes a db entry of dictionaries for each user"""
     db.clear() #emptying it loses all data
     for member in guild.members:
-        db[member.name] = 420
+        d = dict()
         if member.id == bot.user.id:
-            db[member.name] = 0
+            d = make_dictionary(member.name, 1000, 0, 1000)
+            #give huge inventory and stuff to the bot####################################
+        else:
+            d = make_dictionary(member.name) #give starter items#########################
+
+        db[member.name] = d
 
 async def delete_message(ctx, delay):
     try:
@@ -39,7 +64,7 @@ async def delete_message(ctx, delay):
 
 #runs when the bot is first initialized
 @bot.event
-async def on_ready():  
+async def on_ready(): 
     print('Bot is ready')
     channel = bot.get_channel(CHANNEL_ID)
     guild = bot.get_guild(GUILD_ID)
@@ -47,16 +72,18 @@ async def on_ready():
     #only run initialize_db on the first time the bot runs on the server
     if len(db.keys()) == 0:
         await channel.send("Hey channel, I'm JimBot and I'm cool!")
-        await initialize_db(guild) #only wanna initialize once, if ever ran again it erases everything
+        initialize_db(guild) #only wanna initialize once, if ever ran again it erases everything
 
-    print("DATABASE:")
+    #print("DATABASE:")
     # Loop through the list and print each pair
-    for user, amount in db.items():
-        print(user, amount)
+    #for id, user in db.items():
+    #    print(id)
+    #    print_dictionary(user)
 
 #runs every time a message is sent
 @bot.event
 async def on_message(message):
+    """Executes operations on a message by message basis, including wordle"""
     #if the message is from the bot itself, do nothing
     if (message.author == bot.user):
         return
@@ -105,30 +132,33 @@ async def on_message(message):
             return
         
         #make sure its a wordle embed and not another
-        if "wordle" in parent.embeds[0].title.lower():        
+        if "wordle" in parent.embeds[0].title.lower():    
+            ctx = await bot.get_context(message)    
             letter_embed = parent.embeds[0]
             color_embed = parent.embeds[1]
             keyboard_embed = parent.embeds[2]
 
+            should_delete = False
             #check that the correct user is playing the game
             if color_embed.author.name != message.author.name:
-                await message.reply(f"Get your own game bruh, {color_embed.author.name} is in the middle of clutching up.", delete_after=3)
-                await delete_message(ctx, 10)
-                return
+                await message.reply(f"Get your own game bruh, {color_embed.author.name} is in the middle of clutching up.", delete_after=10)
+                should_delete = True
 
             #check that the game is not over
             if is_game_over(color_embed):
-                await message.reply("The game is over. Start a new game with !wordle", delete_after=3)
-                await delete_message(ctx, 10)
-                return
+                await message.reply("The game is over. Start a new game with !wordle", delete_after=10)
+                should_delete = True
 
             #check that the word is valid
             if len(message.content.split()) > 1:
                 await message.reply(f"Given {message.content}. Please only enter one 5 letter word.", delete_after = 3)
-                await delete_message(ctx, 10)
-                return
+                should_delete = True
+                
             if not is_valid_word(message.content):
                 await message.reply(f"{message.content} is not a valid guess", delete_after = 3)
+                should_delete = True
+
+            if should_delete:
                 await delete_message(ctx, 10)
                 return
 
@@ -139,12 +169,11 @@ async def on_message(message):
             await parent.edit(embeds=[new_letter_embed, new_color_embed, new_keyboard_embed])
 
             #delete the message
-            await delete_message(ctx, 10)
+            await delete_message(ctx, 1)
             
             #check if the field "winnings" is defined
             if len(new_color_embed.fields) > 0:
-                ctx = await bot.get_context(message)
-                await bank_update_db(ctx, int(new_color_embed.fields[0].value))
+                await bank_update_db(ctx.author.name, int(new_color_embed.fields[0].value), ctx)
 
     #MUST HAVE PROCESS_COMMANDS so other commands can be done as well
     await bot.process_commands(message)
@@ -152,7 +181,7 @@ async def on_message(message):
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
-        await ctx.send(error, delete_after=3)
+        await ctx.send(error, delete_after=10)
         await delete_message(ctx, 10)
 
 
@@ -166,7 +195,7 @@ async def help(ctx, *, command=None): #* forces command to be a "keyword" type a
     if command:
         cmd = bot.get_command(command)
         if not cmd:
-            await ctx.send(f"Command '{command}' not found.", delete_after=3)
+            await ctx.send(f"Command '{command}' not found.", delete_after=10)
             await delete_message(ctx, 10)
             return
         embed = nextcord.Embed(title=f"{command} Command description", description=cmd.description, color=0x00ff00)
@@ -203,8 +232,7 @@ async def add(ctx, *arr):  #argv
         result += int(i)
     await ctx.send(f"Result = {result}", delete_after=60)
     await delete_message(ctx, 60)
-    return
-    
+
 
 ##########################################
 #               CONNECTIONS              #
@@ -215,11 +243,11 @@ async def join(ctx):
     if (ctx.author.voice):
         channel = ctx.message.author.voice.channel
         await channel.connect()
-        await ctx.send("Joined the voice channel", delete_after=3)
+        await ctx.send("Joined the voice channel", delete_after=10)
         await delete_message(ctx, 10)
 
     else:
-        await ctx.send("You are not in a voice channel", delete_after=3)
+        await ctx.send("You are not in a voice channel", delete_after=10)
         await delete_message(ctx, 10)        
 
 
@@ -227,10 +255,10 @@ async def join(ctx):
 async def leave(ctx):
     if (ctx.voice_client):
         await ctx.guild.voice_client.disconnect()
-        await ctx.send("Left the voice channel", delete_after=3)
+        await ctx.send("Left the voice channel", delete_after=10)
     
     else:
-        await ctx.send("Cannot leave the voice channel since I am not in one.", delete_after=3)
+        await ctx.send("Cannot leave the voice channel since I am not in one.", delete_after=10)
         await delete_message(ctx, 10)
 
 ##########################################
@@ -238,34 +266,36 @@ async def leave(ctx):
 ##########################################
 
 #add amount to a user's bank account
-async def bank_update_db(ctx, amount):
-    user = str(ctx.author.name)
+async def bank_update_db(id:str, amount:int, ctx=None):
+    """Adds amount to the user's bank account"""
     original_bal = 0
-    if user in db.keys():
-        original_bal = db[user]
-        db[user] += amount
+    if id in db.keys():
+        original_bal = db[id]["balance"]
+        db[id]["balance"] += amount
     else:
         #only happens if a user joins after the bot started running
         #so in practice should be never
-        db[user] = 420 + amount
+        db[id]["balance"] += 420 + amount
 
-    if original_bal > 0 and db[user] < 0:
-        await ctx.channel.send(":crab: " + user + " has gone bankrupt! :crab:")
+    if original_bal > 0 and db[id]["balance"] < 0 and ctx:
+        await ctx.channel.send(":crab: " + str(ctx.author.name) + " has gone bankrupt! :crab:")
 
 @bot.command(description="displays the bank accounts of all users", aliases=['lb', 'blb', 'bank_leaderboard'])
 async def leaderboard(ctx):
     if (len(db.keys()) == 0):
         #should never happen
-        await ctx.channel.send("No bank users yet", delete_after=3)
+        await ctx.channel.send("No bank users yet", delete_after=10)
         await delete_message(ctx, 10)
         return
     
     #make embedded message
     embed = nextcord.Embed(title="Leaderboard", color=0xff0000)
     index = 1
-    sorted_users = sorted(db.items(), key=lambda x: x[1], reverse=True)
-    for user, amount in sorted_users:
-        embed.add_field(name=f"{index}. {user}", value=f"${amount}", inline=False)
+    sorted_users = sorted(db.items(), key=lambda x: x[1]["balance"], reverse=True)
+    for id, user in sorted_users:
+        n = user["name"]
+        b = user["balance"]
+        embed.add_field(name=f"{index}. {n}", value=f"${b}", inline=False)
         index += 1
     
     await ctx.send(embed=embed)
@@ -276,7 +306,7 @@ async def leaderboard(ctx):
 @bot.command(description="displays your bank account balance", aliases=['bal'])
 async def balance(ctx):
     await ctx.channel.send(ctx.author.name + " has $" + 
-                           str(db[ctx.author.name]) + " :money_with_wings:")
+                           str(db[ctx.author.name]["balance"]) + " :money_with_wings:")
 
 @bot.command(description="pay another user with !pay <user> <amount>")
 #example: !pay Jimmers2001 100
@@ -291,23 +321,23 @@ async def pay(ctx, *arr):
 
     #confirm the amount is valid
     if not amount.isnumeric():
-        await ctx.channel.send("Invalid amount: " + amount, delete_after=3)
+        await ctx.channel.send("Invalid amount: " + amount, delete_after=10)
         await delete_message(ctx, 10)
         return
     amount = int(arr[1])
 
     bad_command = False
     if giver == receiver:
-        await ctx.channel.send("Cannot pay yourself " + giver, delete_after=3)
+        await ctx.channel.send("Cannot pay yourself " + giver, delete_after=10)
         bad_command=True
     if not giver in db.keys():
-        await ctx.channel.send("Could not find your account: " + giver, delete_after=3)
+        await ctx.channel.send("Could not find your account: " + giver, delete_after=10)
         bad_command=True
     if not receiver in db.keys():
-        await ctx.channel.send("Could not find account: " + receiver, delete_after=3)
+        await ctx.channel.send("Could not find account: " + receiver, delete_after=10)
         bad_command=True
     if amount <= 0:
-        await ctx.channel.send("Must give positive amount to " + receiver, delete_after=3)
+        await ctx.channel.send("Must give positive amount to " + receiver, delete_after=10)
         bad_command=True
 
     if bad_command:
@@ -315,10 +345,11 @@ async def pay(ctx, *arr):
         return
 
     #check if the giver has enough to give
-    if db[giver] > amount:
+    if db[giver]["balance"] > amount:
         #assume giver and receiver both have bank accounts
-        db[giver] -= amount
-        db[receiver] += amount
+        await bank_update_db(giver, -amount, ctx)
+        await bank_update_db(receiver, amount, ctx)
+
         embed = nextcord.Embed(
             title = ":moneybag: Transaction :moneybag:",
             description = giver + " gave $" + str(amount) + " to " + receiver,
@@ -330,7 +361,7 @@ async def pay(ctx, *arr):
         return
 
     else:
-        await ctx.channel.send(giver + " is too *poor* to give $" + str(amount) + " to " + receiver + "\n(i dont talk to broke boys)", delete_after=3)
+        await ctx.channel.send(giver + " is too *poor* to give $" + str(amount) + " to " + receiver + "\n(i dont talk to broke boys)", delete_after=10)
         await delete_message(ctx, 10)
         return
 
@@ -344,7 +375,7 @@ async def exercise(ctx):
     await ctx.channel.send(str(ctx.author.name) + " has to do 10 pushups/squats for $50", delete_after=60)
     await asyncio.sleep(40)
     await ctx.channel.send(str(ctx.author.name) + " better have done 10 pushups/squats... here's $50! :muscle:")
-    await bank_update_db(ctx, 50)
+    await bank_update_db(ctx.author.name, 50, ctx)
     await delete_message(ctx, 10)
     
     
