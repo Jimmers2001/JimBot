@@ -16,8 +16,9 @@ REPLIT_DB_URL = os.getenv("REPLIT_DB_URL")
 db = replit.database.Database(REPLIT_DB_URL)
 
 #slot_emojis:str = ["🍒", "🍊", "🍋", "🍉", "🍇", "🍎", "🍓", "🍑", "🍍"]
-slot_emojis:str = [":toilet:"*20, ":gem:", ":watermelon:", ":strawberry:", ":hot_pepper:", ":kiwi: ", ":cherries:", ":grapes:", ":peach:", ":pineapple:", ":avocado:", ":tomato:", ":eggplant:", ":broccoli:", ":carrot:", ":corn:", ":cucumber:", ":potato:", ":leafy_green:", ":mushroom:", ":onion:", ":garlic:"]
-
+slot_emojis = [":toilet:"]*130 + [":gem:"]*10 + [":watermelon:"]*50 + [":strawberry:"]*50 + [":hot_pepper:"]*30 + [":kiwi:"]*50 + [":cherries:"]*100 + [":grapes:"]*30 + [":peach:"]*30 + [":pineapple:"]*50 + [":avocado:"]*30 + [":tomato:"]*50 + [":eggplant:"]*30 + [":broccoli:"]*20 + [":carrot:"]*30 + [":corn:"]*30 + [":cucumber:"]*30 + [":potato:"]*50 + [":leafy_green:"]*50 + [":mushroom:"]*50 + [":onion:"]*50 + [":garlic:"]*50
+if len(slot_emojis) != 1000:
+    print("length of slot_emojis is ", len(slot_emojis))
 
 #initialize bot that intents to use all discord features
 bot = commands.Bot(command_prefix="!", intents=nextcord.Intents.all())
@@ -219,11 +220,11 @@ async def hello(ctx):  #argv
         Zdravstvuyte, Kia ora, Xin chào, Selamat pagi, Marhaba, Kumusta, Sannu, Dumelang, \
         Jambo, Bawoni, Sawatdee, Saumia, Habari, Dumela, Shwmae, Hi, 嘿，你這個男孩, \
         Hey there, Mornin', Howdy, G'day, Wazzapnin, Yo., Hiya, Whats good, Whats up, \
-        Howdy, Salut,Moin,Hoi,Ola,Ciao,Merhaba,Sawubona,Përshëndetje,Bok,Kumusta,Sveiki,Labas, \
-        Sholem aleikhem,Hallo,Salve,Ahoj,Hej,Dobrý den, Marhabaan,Yasou,Hei,Sannu,Nǐ hǎo,Terve,\
-        Hejhej,Aksunai,Dia dhuit,Dobro jutro,Dzień dobry,Xaipete,Salamu alaikum,Mirëdita,\
-        Sannu da zuwa,Zdravstvuyte,Shwmae,Moïen,Sveikas,Moi,Moien,Goede dag,Moïen,Szia,\
-        Hej alla,Nǐn hǎo,Hejhej,Привет,Xayrli tong,Cześć,Merhabalar,Hello"
+        Howdy, Salut, Moin, Hoi, Ola, Ciao, Merhaba, Sawubona, Përshëndetje, Bok, Kumusta, Sveiki, Labas, \
+        Sholem aleikhem, Hallo, Salve, Ahoj, Hej, Dobrý den, Marhabaan, Yasou, Hei, Sannu, Nǐ hǎo, Terve,\
+        Hejhej, Aksunai, Dia dhuit, Dobro jutro, Dzień dobry, Xaipete, Salamu alaikum, Mirëdita,\
+        Sannu da zuwa, Zdravstvuyte, Shwmae, Moïen, Sveikas, Moi, Moien, Goede dag, Moïen, Szia,\
+        Hej alla, Nǐn hǎo, Hejhej, Привет, Xayrli tong, Cześć, Merhabalar, Hello"
 
     await ctx.send(random.choice(greetings.split(", ")))
 
@@ -295,7 +296,7 @@ async def leaderboard(ctx):
     embed = nextcord.Embed(title="Leaderboard", color=0xff0000)
     index = 1
     sorted_users = sorted(db.items(), key=lambda x: x[1]["balance"], reverse=True)
-    for id, user in sorted_users:
+    for _, user in sorted_users:
         n = user["name"]
         b = user["balance"]
         embed.add_field(name=f"{index}. {n}", value=f"${b}", inline=False)
@@ -381,8 +382,6 @@ async def exercise(ctx):
     await bank_update_db(ctx.author.name, 50, ctx)
     await delete_message(ctx, 10)
     
-    
-
 @bot.command(description="play wordle")
 async def wordle(interaction: nextcord.Interaction):
     #generate a puzzle
@@ -397,6 +396,38 @@ async def wordle(interaction: nextcord.Interaction):
     instructions="Reply to this message with your guesses to play wordle."
     await interaction.send(content=instructions, embeds=[letter_embed, color_embed, keyboard_embed])
     #unable to delete the original message in the interaction
+"""
+class ButtonView(nextcord.ui.View):
+    def __init__(self):
+        super().__init__()
+        print("Created a button")
+        self.add_item(nextcord.ui.Button(label='Spin Again!', custom_id='slot_button'))
+
+    async def on_button_click(self, interaction: nextcord.Interaction, button: nextcord.ui.Button,):
+        ctx = await self.bot.get_context(interaction)
+        print("in on_button_click")
+        if button.custom_id == 'slot_button':
+            #spin again
+            print("spin again")
+            await slots(ctx)
+"""
+class SlotMachineButtonView(nextcord.ui.View):
+    def __init__(self):
+        super().__init__()
+        print("Created a button")
+        self.add_item(nextcord.ui.Button(label='Spin Again!', custom_id='slot_button'))
+
+    @nextcord.ui.button(label="Spin again")
+    async def on_button_click(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+        new_embed = nextcord.Embed(title="Jim Spins", color=nextcord.Color.green())
+        new_embed.add_field(name="Random String", value=spin())
+        #instead of having add_field, just reset the description by doing description=spin()
+        await self.message.edit(embed=new_embed)
+        await interaction.response.defer()
+
+
+async def spin(ctx):
+    return "spin command"    
 
 @bot.command(description="play slots")
 async def slots(ctx):
@@ -406,25 +437,22 @@ async def slots(ctx):
     # Construct the slot machine message
     message = nextcord.Embed(title="Jim Spins", color=nextcord.Color.green())
     message.set_author(name=ctx.author.name, icon_url=ctx.author.display_avatar.url)
-    print("after initialize")
-    print(random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis))
     
     #start by randomly choosing the emojis and then edit later to choose a location in the array and loop through to show the animation
 
     #row 1
-    message.description = random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n\n"
+    message.description = random.choice(row1)+random.choice(row1)+random.choice(row1)+"\n\n"
     
     #row 2
-    message.description += random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n\n"
+    message.description += random.choice(row2)+random.choice(row2)+random.choice(row2)+"\n\n"
     
     #row 3
-    message.description += random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n"
-    print("after row creations")
+    message.description += random.choice(row3)+random.choice(row3)+random.choice(row3)+"\n"
 
     # Send the message to the channel where the command was invoked
-    await ctx.send(embed=message)
-    print("after send")
-
+    await ctx.send(embed=message, view=view)
+    print("created embed")
+"""
 
 """
 @bot.command()
