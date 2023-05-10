@@ -1,4 +1,4 @@
-from playsound import playsound
+#from playsound import playsound
 #from discord import FFmpegPCMAudio
 import asyncio, nextcord, os, replit, random
 from keep_alive import keep_alive
@@ -14,6 +14,9 @@ CHANNEL_ID = int(os.getenv("CHANNEL_ID"))  #must be integer
 GUILD_ID = int(os.getenv("GUILD_ID"))
 REPLIT_DB_URL = os.getenv("REPLIT_DB_URL")
 db = replit.database.Database(REPLIT_DB_URL)
+
+#slot_emojis:str = ["🍒", "🍊", "🍋", "🍉", "🍇", "🍎", "🍓", "🍑", "🍍"]
+slot_emojis:str = [":toilet:"*20, ":gem:", ":watermelon:", ":strawberry:", ":hot_pepper:", ":kiwi: ", ":cherries:", ":grapes:", ":peach:", ":pineapple:", ":avocado:", ":tomato:", ":eggplant:", ":broccoli:", ":carrot:", ":corn:", ":cucumber:", ":potato:", ":leafy_green:", ":mushroom:", ":onion:", ":garlic:"]
 
 
 #initialize bot that intents to use all discord features
@@ -394,6 +397,34 @@ async def wordle(interaction: nextcord.Interaction):
     instructions="Reply to this message with your guesses to play wordle."
     await interaction.send(content=instructions, embeds=[letter_embed, color_embed, keyboard_embed])
     #unable to delete the original message in the interaction
+
+@bot.command(description="play slots")
+async def slots(ctx):
+    # Shuffle the emojis to simulate a slot machine
+    random.shuffle(slot_emojis)
+    print("here")
+    # Construct the slot machine message
+    message = nextcord.Embed(title="Jim Spins", color=nextcord.Color.green())
+    message.set_author(name=ctx.author.name, icon_url=ctx.author.display_avatar.url)
+    print("after initialize")
+    print(random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis))
+    
+    #start by randomly choosing the emojis and then edit later to choose a location in the array and loop through to show the animation
+
+    #row 1
+    message.description = random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n\n"
+    
+    #row 2
+    message.description += random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n\n"
+    
+    #row 3
+    message.description += random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n"
+    print("after row creations")
+
+    # Send the message to the channel where the command was invoked
+    await ctx.send(embed=message)
+    print("after send")
+
 
 """
 @bot.command()
