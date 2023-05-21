@@ -2,7 +2,6 @@
 #from discord import FFmpegPCMAudio
 import asyncio, nextcord, os, replit, random
 from keep_alive import keep_alive
-from nextcord.ext import commands
 from nextcord.ext import commands, tasks
 from wordle import *
 #from user import *
@@ -100,28 +99,6 @@ async def on_message(message):
     if 'jim' in message.content.lower() and not 'jimbot' in message.content.lower():
         await message.add_reaction('\U0001F60E')  # sunglasses emoji
 
-        if message.author.voice and message.author.voice.channel:
-            # Connect to the voice channel that the author is in
-            await message.channel.send("connecting")
-            vc = await message.author.voice.channel.connect()
-            await message.channel.send("done connecting")
-
-            #vc.play(nextcord.FFmpegPCMAudio('testing.mp3'), after=lambda e: print('done', e))
-            #vc.is_playing()
-            #vc.pause()
-            #vc.resume()
-            #vc.stop()
-
-            #await vc.play(nextcord.FFmpegPCMAudio(
-            #  'https://www.youtube.com/watch?v=VpnzssRMxYA&ab_channel=Zechal'),
-            #        after=lambda e: print('done', e))
-            #await asyncio.sleep(2)
-            await message.channel.send("Disconnecting")
-            await vc.disconnect()
-            await message.channel.send("done disconnecting")
-        #else:
-        #nothing will happen but dont alert the channel
-
 
 ########################
 #        WORDLE        #
@@ -187,7 +164,6 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         await ctx.send(error, delete_after=10)
         await delete_message(ctx, 10)
-
 
 #####################################################################################
 #                                    COMMANDS                                       #
@@ -310,7 +286,8 @@ async def leaderboard(ctx):
 @bot.command(description="displays your bank account balance", aliases=['bal'])
 async def balance(ctx):
     await ctx.channel.send(ctx.author.name + " has $" + 
-                           str(db[ctx.author.name]["balance"]) + " :money_with_wings:")
+                           str(db[ctx.author.name]["balance"]) + " :money_with_wings:", delete_after=600)
+    await delete_message(ctx, 600)
 
 @bot.command(description="pay another user with !pay <user> <amount>")
 #example: !pay Jimmers2001 100
@@ -452,7 +429,6 @@ async def slots(ctx):
     # Send the message to the channel where the command was invoked
     await ctx.send(embed=message, view=view)
     print("created embed")
-"""
 
 @bot.command()
 #example: !play blackjack 100
@@ -479,7 +455,6 @@ async def play(ctx, *arr):
     await ctx.channel.send(str(ctx.author.name) + " is playing " + game + " with bet " + str(bet))
     #for now, just always win and double the bet
     await bank_update_db(ctx, bet)
-"""
 
 @bot.command(description="randomly choose an agent", aliases=['pick'])
 async def agent(ctx):
