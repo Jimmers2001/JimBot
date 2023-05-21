@@ -3,9 +3,11 @@
 import asyncio, nextcord, os, replit, random
 from keep_alive import keep_alive
 from nextcord.ext import commands
+from nextcord.ext import commands, tasks
 from wordle import *
 #from user import *
 from dotenv import load_dotenv
+import os 
 
 load_dotenv()
 
@@ -98,8 +100,6 @@ async def on_message(message):
     if 'jim' in message.content.lower() and not 'jimbot' in message.content.lower():
         await message.add_reaction('\U0001F60E')  # sunglasses emoji
 
-    if (False and "david" in message.content.lower()):
-        #check if the person saying david is in the vc
         if message.author.voice and message.author.voice.channel:
             # Connect to the voice channel that the author is in
             await message.channel.send("connecting")
@@ -454,7 +454,6 @@ async def slots(ctx):
     print("created embed")
 """
 
-"""
 @bot.command()
 #example: !play blackjack 100
 async def play(ctx, *arr):
