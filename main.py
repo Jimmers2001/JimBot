@@ -191,6 +191,7 @@ async def help(ctx, *, command=None): #* forces command to be a "keyword" type a
 
 @bot.command(description="greets you")
 async def hello(ctx):  #argv
+    print("in hello")
     greetings: str = "Hello, Hi, Hey, Yo, What's up, Greetings, Salaam, Namaste, Bonjour, \
         Hola, Ciao, Konnichiwa, Ni hao, Merhaba, Sawubona, Shalom, Hallo, Privet, Ahlan, Sveiki,\
         Zdravstvuyte, Kia ora, Xin chào, Selamat pagi, Marhaba, Kumusta, Sannu, Dumelang, \
@@ -373,62 +374,52 @@ async def wordle(interaction: nextcord.Interaction):
     instructions="Reply to this message with your guesses to play wordle."
     await interaction.send(content=instructions, embeds=[letter_embed, color_embed, keyboard_embed])
     #unable to delete the original message in the interaction
-"""
-class ButtonView(nextcord.ui.View):
+
+
+class SlotView(nextcord.ui.View):
     def __init__(self):
         super().__init__()
-        print("Created a button")
-        self.add_item(nextcord.ui.Button(label='Spin Again!', custom_id='slot_button'))
+    
+    @nextcord.ui.button(label="Spin again")
+    async def on_button_click(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
+        new_embed = nextcord.Embed(title="Jim Spins", color=nextcord.Color.green())
+        new_embed.set_author(name=interaction.user.name, icon_url=str(interaction.user.avatar.url))
+        new_embed.description = spin()
 
-    async def on_button_click(self, interaction: nextcord.Interaction, button: nextcord.ui.Button,):
+        #instead of having add_field, just reset the description by doing description=spin()
+        await interaction.response.edit_message(embed=new_embed, view=self)
+        #await interaction.response.defer() #i think this makes the discord bot look like its typing. Good for waiting for an API 
+
+    """async def on_button_click(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         ctx = await self.bot.get_context(interaction)
         print("in on_button_click")
         if button.custom_id == 'slot_button':
             #spin again
             print("spin again")
-            await slots(ctx)
-"""
-class SlotMachineButtonView(nextcord.ui.View):
-    def __init__(self):
-        super().__init__()
-        print("Created a button")
-        self.add_item(nextcord.ui.Button(label='Spin Again!', custom_id='slot_button'))
+            await spin(ctx)"""
 
-    @nextcord.ui.button(label="Spin again")
-    async def on_button_click(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
-        new_embed = nextcord.Embed(title="Jim Spins", color=nextcord.Color.green())
-        new_embed.add_field(name="Random String", value=spin())
-        #instead of having add_field, just reset the description by doing description=spin()
-        await self.message.edit(embed=new_embed)
-        await interaction.response.defer()
-
-
-async def spin(ctx):
-    return "spin command"    
+def spin():
+    #the 3 rows
+    d = random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n\n"
+    d += random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n\n"
+    d += random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n"
+    return d
 
 @bot.command(description="play slots")
 async def slots(ctx):
     # Shuffle the emojis to simulate a slot machine
     random.shuffle(slot_emojis)
-    print("here")
+
     # Construct the slot machine message
     message = nextcord.Embed(title="Jim Spins", color=nextcord.Color.green())
     message.set_author(name=ctx.author.name, icon_url=ctx.author.display_avatar.url)
     
     #start by randomly choosing the emojis and then edit later to choose a location in the array and loop through to show the animation
-
-    #row 1
-    message.description = random.choice(row1)+random.choice(row1)+random.choice(row1)+"\n\n"
-    
-    #row 2
-    message.description += random.choice(row2)+random.choice(row2)+random.choice(row2)+"\n\n"
-    
-    #row 3
-    message.description += random.choice(row3)+random.choice(row3)+random.choice(row3)+"\n"
+    message.description = spin()
 
     # Send the message to the channel where the command was invoked
-    await ctx.send(embed=message, view=view)
-    print("created embed")
+    await ctx.send(embed=message, view=SlotView())
+    
 
 @bot.command()
 #example: !play blackjack 100
@@ -437,8 +428,6 @@ async def play(ctx, *arr):
 
     #check for games that dont involve bets
     if game.strip().lower() == "wordle":
-
-        await play_wordle(ctx, *arr)
         return
 
     #continue with games that do have bets
