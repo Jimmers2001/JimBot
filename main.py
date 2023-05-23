@@ -16,8 +16,7 @@ GUILD_ID = int(os.getenv("GUILD_ID"))
 REPLIT_DB_URL = os.getenv("REPLIT_DB_URL")
 db = replit.database.Database(REPLIT_DB_URL)
 
-#slot_emojis:str = ["🍒", "🍊", "🍋", "🍉", "🍇", "🍎", "🍓", "🍑", "🍍"]
-slot_emojis = [":toilet:"]*130 + [":gem:"]*10 + [":watermelon:"]*50 + [":strawberry:"]*50 + [":hot_pepper:"]*30 + [":kiwi:"]*50 + [":cherries:"]*100 + [":grapes:"]*30 + [":peach:"]*30 + [":pineapple:"]*50 + [":avocado:"]*30 + [":tomato:"]*50 + [":eggplant:"]*30 + [":broccoli:"]*20 + [":carrot:"]*30 + [":corn:"]*30 + [":cucumber:"]*30 + [":potato:"]*50 + [":leafy_green:"]*50 + [":mushroom:"]*50 + [":onion:"]*50 + [":garlic:"]*50
+slot_emojis = [":toilet: "]*205 + [":gem: "]*10 + [":cherries: "]*10 + [":peach: "]*50 + [":eggplant: "]*50  + [":pineapple: "]*75 + [":avocado: "]*75 + [":mushroom: "]*75 + [":broccoli: "]*150 + [":potato: "]*150 + [":blueberries: "]*150
 if len(slot_emojis) != 1000:
     print("length of slot_emojis is ", len(slot_emojis))
 
@@ -377,14 +376,15 @@ async def wordle(interaction: nextcord.Interaction):
 
 
 class SlotView(nextcord.ui.View):
-    def __init__(self):
+    def __init__(self, b):
         super().__init__()
+        self.bet = b
     
     @nextcord.ui.button(label="Spin again")
     async def on_button_click(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         new_embed = nextcord.Embed(title="Jim Spins", color=nextcord.Color.green())
         new_embed.set_author(name=interaction.user.name, icon_url=str(interaction.user.avatar.url))
-        new_embed.description = await spin()
+        new_embed.description = await spin(self.bet)
 
         #instead of having add_field, just reset the description by doing description=spin()
         await interaction.response.edit_message(embed=new_embed, view=self)
@@ -398,17 +398,97 @@ class SlotView(nextcord.ui.View):
             print("spin again")
             await spin(ctx)"""
 
-async def calc_winnings(d: str):
-    return 0
+def calc_multiplier(d: str):
+    multiplier = 0
+    s = d.replace("\n", "").replace("\n\n", "").split(" ")
+    found_triplet = False
+    found_pity = False
+    found_cherry = False
 
-async def spin():
+    #check for triplets vertically, horizontally, and diagonally
+    #row
+    for row_start in range(0, 9, 3):
+        if len(set(s[row_start:row_start+3])) == 1 and s[row_start] != ":toilet:":
+            #found winner so determine multiplier
+            print("found triple row")
+            found_triplet = True
+    #col
+    for col in range(3):
+        if len(set(s[col:9:3])) == 1 and s[col] != ":toilet:":
+            print("found triple col")
+            #found winner so determine multiplier
+            found_triplet = True
+
+    #diagonal
+    if len(set(s[0:9:4])) == 1 and s[0] != ":toilet:":
+        print("found diagonal triple")
+        #found winner so determine multiplier
+        found_triplet = True
+
+    #anti-diagonal
+    if len(set(s[2:7:2])) == 1 and s[2] != ":toilet:":
+        print("found anti-diagonal triple")
+        #found winner so determine multiplier
+        found_triplet = True
+
+    #check for a cherry
+    if not found_triplet:
+        num_cherries = 0
+        for emoji in s:
+            if emoji == ":cherry:":
+                num_cherries += 1
+                found_cherry = True
+        #if found cherry, determine multiplier
+        if found_cherry:
+            print("Found ", num_cherries, " cherries")
+            #determine multiplier based on number of cherries
+
+
+    #check for pity combos of 2 vertically, horizontally, and diagonally
+    if not found_triplet and not found_cherry:
+        #rows
+        for row_start in range(0, 9, 3):
+            row = s[row_start:row_start+3]
+            if any(row[i] == row[i+1] for i in range(len(row) - 1)) and row[1] != ":toilet:":
+                print("Found pity row")
+                #found pity so determine partial multiplier
+                found_pity = True
+
+        #cols
+        for col in range(3):
+            column = s[col:9:3]
+            if any(column[i] == column[i+1] for i in range(len(column) - 1)) and column[1] != ":toilet:":
+                print("Found pity col")
+                #found pity so determine partial multiplier
+                found_pity = True
+
+        #main diagonal
+        main_diagonal = s[0:9:4]
+        if any(main_diagonal[i] == main_diagonal[i+1] for i in range(len(main_diagonal) - 1)) and main_diagonal[1] != ":toilet:":
+            print("Found pity diag")
+            #found pity so determine partial multiplier
+            found_pity = True
+
+        #anti-diagonal
+        anti_diagonal = s[2:7:2]
+        if any(anti_diagonal[i] == anti_diagonal[i+1] for i in range(len(anti_diagonal) - 1)) and anti_diagonal[1] != ":toilet:":
+            print("Found pity anti-diag")
+            #found pity so determine partial multiplier
+            found_pity = True
+
+    #display why the amount was won (from triplet, cherry, or pity)
+    #if none were found, multiplier is -1
+
+    return multiplier
+
+async def spin(bet):
     #the 3 rows
     d = random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n\n"
     d += random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n\n"
     d += random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n"
     
     #reward based on the outcome
-    winnings = await calc_winnings(d)
+    winnings = calc_multiplier(d)
     print("made winnings of: ", winnings)
     #bank_update_db(winnings)
 
@@ -443,10 +523,10 @@ async def slots(ctx, *arr):
     
     #start by randomly choosing the emojis and then edit later to choose a location in the array and loop through to show the animation
     
-    message.description = await spin()
+    message.description = await spin(bet)
 
     # Send the message to the channel where the command was invoked
-    await ctx.send(embed=message, view=SlotView())
+    await ctx.send(embed=message, view=SlotView(bet))
     
 
 @bot.command()
