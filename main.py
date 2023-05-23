@@ -398,15 +398,43 @@ class SlotView(nextcord.ui.View):
             print("spin again")
             await spin(ctx)"""
 
-def spin():
+async def calc_winnings(d: str):
+    print(d)
+    return 0
+
+async def spin():
     #the 3 rows
     d = random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n\n"
     d += random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n\n"
     d += random.choice(slot_emojis)+random.choice(slot_emojis)+random.choice(slot_emojis)+"\n"
+    
+    #reward based on the outcome
+    winnings = await calc_winnings(d)
+    bank_update_db(winnings)
+
     return d
 
 @bot.command(description="play slots")
-async def slots(ctx):
+async def slots(ctx, *arr):
+    #check bet logic
+    if len(arr) < 1:
+        await ctx.send("Please provide the amount you are betting (!slots <amount>).", delete_after=3)
+        await delete_message(ctx, 3)
+        return
+    
+    bet = arr[0]
+
+    if not bet.isnumeric() or int(bet) <= 0:
+        await ctx.send("Invalid bet amount: " + bet, delete_after=3)
+        await delete_message(ctx, 3)
+        return
+    bet = int(bet)
+
+    if db[ctx.author.name] < bet:
+        await ctx.send(str(ctx.author.name) + " has insufficient funds to bet $" + str(bet), delete_after=3)
+        await delete_message(ctx, 3)
+        return
+
     # Shuffle the emojis to simulate a slot machine
     random.shuffle(slot_emojis)
 
@@ -415,6 +443,7 @@ async def slots(ctx):
     message.set_author(name=ctx.author.name, icon_url=ctx.author.display_avatar.url)
     
     #start by randomly choosing the emojis and then edit later to choose a location in the array and loop through to show the animation
+    
     message.description = spin()
 
     # Send the message to the channel where the command was invoked
