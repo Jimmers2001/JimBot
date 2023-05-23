@@ -384,7 +384,7 @@ class SlotView(nextcord.ui.View):
     async def on_button_click(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
         new_embed = nextcord.Embed(title="Jim Spins", color=nextcord.Color.green())
         new_embed.set_author(name=interaction.user.name, icon_url=str(interaction.user.avatar.url))
-        new_embed.description = spin()
+        new_embed.description = await spin()
 
         #instead of having add_field, just reset the description by doing description=spin()
         await interaction.response.edit_message(embed=new_embed, view=self)
@@ -399,7 +399,6 @@ class SlotView(nextcord.ui.View):
             await spin(ctx)"""
 
 async def calc_winnings(d: str):
-    print(d)
     return 0
 
 async def spin():
@@ -410,7 +409,8 @@ async def spin():
     
     #reward based on the outcome
     winnings = await calc_winnings(d)
-    bank_update_db(winnings)
+    print("made winnings of: ", winnings)
+    #bank_update_db(winnings)
 
     return d
 
@@ -422,19 +422,18 @@ async def slots(ctx, *arr):
         await delete_message(ctx, 3)
         return
     
-    bet = arr[0]
-
-    if not bet.isnumeric() or int(bet) <= 0:
-        await ctx.send("Invalid bet amount: " + bet, delete_after=3)
+    if not arr[0].isnumeric() or int(arr[0]) <= 0:
+        await ctx.send("Invalid bet amount: " + arr[0], delete_after=3)
         await delete_message(ctx, 3)
         return
-    bet = int(bet)
+    
+    bet = int(arr[0])
 
-    if db[ctx.author.name] < bet:
+    if db[ctx.author.name]["balance"] < bet:
         await ctx.send(str(ctx.author.name) + " has insufficient funds to bet $" + str(bet), delete_after=3)
         await delete_message(ctx, 3)
         return
-
+    
     # Shuffle the emojis to simulate a slot machine
     random.shuffle(slot_emojis)
 
@@ -444,7 +443,7 @@ async def slots(ctx, *arr):
     
     #start by randomly choosing the emojis and then edit later to choose a location in the array and loop through to show the animation
     
-    message.description = spin()
+    message.description = await spin()
 
     # Send the message to the channel where the command was invoked
     await ctx.send(embed=message, view=SlotView())
@@ -466,7 +465,7 @@ async def play(ctx, *arr):
         return
     bet = int(arr[1])
 
-    if db[ctx.author.name] < bet:
+    if db[ctx.author.name]["balance"] < bet:
         await ctx.channel.send(str(ctx.author.name) + " has insufficient funds to bet $" + str(bet))
         return
 
