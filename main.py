@@ -382,7 +382,7 @@ class SlotView(nextcord.ui.View):
     
     @nextcord.ui.button(label="Spin again")
     async def on_button_click(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
-        new_embed = nextcord.Embed(title="Jim Spins", color=nextcord.Color.green())
+        new_embed = nextcord.Embed(title=f"Jim Spins - {self.bet}", color=nextcord.Color.green())
         new_embed.set_author(name=interaction.user.name, icon_url=str(interaction.user.avatar.url))
         new_embed.description = await spin(self.bet)
 
@@ -401,9 +401,9 @@ class SlotView(nextcord.ui.View):
 def calc_multiplier(d: str):
     multiplier = 0
     s = d.replace("\n", "").replace("\n\n", "").split(" ")
-    found_triplet = False
-    found_pity = False
-    found_cherry = False
+    num_triplet = 0
+    num_pity = 0
+    num_cherries = 0
 
     #check for triplets vertically, horizontally, and diagonally
     #row
@@ -411,48 +411,53 @@ def calc_multiplier(d: str):
         if len(set(s[row_start:row_start+3])) == 1 and s[row_start] != ":toilet:":
             #found winner so determine multiplier
             print("found triple row")
-            found_triplet = True
+            num_triplet += 1
     #col
     for col in range(3):
         if len(set(s[col:9:3])) == 1 and s[col] != ":toilet:":
             print("found triple col")
             #found winner so determine multiplier
-            found_triplet = True
+            num_triplet += 1
 
     #diagonal
     if len(set(s[0:9:4])) == 1 and s[0] != ":toilet:":
         print("found diagonal triple")
         #found winner so determine multiplier
-        found_triplet = True
+        num_triplet += 1
 
     #anti-diagonal
     if len(set(s[2:7:2])) == 1 and s[2] != ":toilet:":
         print("found anti-diagonal triple")
         #found winner so determine multiplier
-        found_triplet = True
+        num_triplet += 1
+
+
+
 
     #check for a cherry
-    if not found_triplet:
-        num_cherries = 0
+    if num_triplet == 0:
         for emoji in s:
             if emoji == ":cherry:":
                 num_cherries += 1
-                found_cherry = True
         #if found cherry, determine multiplier
-        if found_cherry:
+        if num_cherries != 0:
             print("Found ", num_cherries, " cherries")
             #determine multiplier based on number of cherries
 
 
+
+
+
+
     #check for pity combos of 2 vertically, horizontally, and diagonally
-    if not found_triplet and not found_cherry:
+    if num_triplet == 0 and num_cherries == 0:
         #rows
         for row_start in range(0, 9, 3):
             row = s[row_start:row_start+3]
             if any(row[i] == row[i+1] for i in range(len(row) - 1)) and row[1] != ":toilet:":
                 print("Found pity row")
                 #found pity so determine partial multiplier
-                found_pity = True
+                num_pity += 1
 
         #cols
         for col in range(3):
@@ -460,25 +465,25 @@ def calc_multiplier(d: str):
             if any(column[i] == column[i+1] for i in range(len(column) - 1)) and column[1] != ":toilet:":
                 print("Found pity col")
                 #found pity so determine partial multiplier
-                found_pity = True
+                num_pity += 1
 
         #main diagonal
         main_diagonal = s[0:9:4]
         if any(main_diagonal[i] == main_diagonal[i+1] for i in range(len(main_diagonal) - 1)) and main_diagonal[1] != ":toilet:":
             print("Found pity diag")
             #found pity so determine partial multiplier
-            found_pity = True
+            num_pity += 1
 
         #anti-diagonal
         anti_diagonal = s[2:7:2]
         if any(anti_diagonal[i] == anti_diagonal[i+1] for i in range(len(anti_diagonal) - 1)) and anti_diagonal[1] != ":toilet:":
             print("Found pity anti-diag")
             #found pity so determine partial multiplier
-            found_pity = True
+            num_pity += 1
 
-    #display why the amount was won (from triplet, cherry, or pity)
+    #display why the amount was won (from triplet, cherry, or pity, or alternative behavior)
     #if none were found, multiplier is -1
-
+    print(f"triplet: {num_triplet}, cherries: {num_cherries}, pities: {num_pity}")
     return multiplier
 
 async def spin(bet):
@@ -518,7 +523,7 @@ async def slots(ctx, *arr):
     random.shuffle(slot_emojis)
 
     # Construct the slot machine message
-    message = nextcord.Embed(title="Jim Spins", color=nextcord.Color.green())
+    message = nextcord.Embed(title=f"Jim Spins - {bet}", color=nextcord.Color.green())
     message.set_author(name=ctx.author.name, icon_url=ctx.author.display_avatar.url)
     
     #start by randomly choosing the emojis and then edit later to choose a location in the array and loop through to show the animation
