@@ -15,13 +15,13 @@ GUILD_ID = int(os.getenv("GUILD_ID"))
 REPLIT_DB_URL = os.getenv("REPLIT_DB_URL")
 db = replit.database.Database(REPLIT_DB_URL)
 
-slot_emojis = ["???"]*5 + [":toilet: "]*205 + [":gem: "]*10 + [":cherries: "]*10 + [":peach: "]*50 + [":eggplant: "]*50  + [":pineapple: "]*75 + [":avocado: "]*70 + [":mushroom: "]*75 + [":broccoli: "]*150 + [":potato: "]*150 + [":blueberries: "]*150
+slot_emojis = ["???"]*1 + [":toilet: "]*205 + [":gem: "]*10 + [":cherries: "]*10 + [":peach: "]*50 + [":eggplant: "]*50  + [":pineapple: "]*75 + [":avocado: "]*70 + [":mushroom: "]*75 + [":broccoli: "]*150 + [":potato: "]*150 + [":blueberries: "]*150
 if len(slot_emojis) != 1000:
     print("\n\n\nlength of slot_emojis is ", len(slot_emojis))
 emoji_multipliers = {
     ":toilet:":     -1,
     ":gem:":        100,
-    ":cherries:":   2,
+    ":cherries:":   5,
     ":peach:":      10,
     ":eggplant:":   10,
     ":pineapple:":  5,
@@ -43,7 +43,7 @@ def print_dictionary(d:dict) -> dict:
     print("\n")
 
 
-def make_dictionary(name:str, balance=420, wordle_wins=0, times_exercised=0, inventory=[], xp=0) -> dict:
+def make_dictionary(name:str, balance:int=420, wordle_wins:int=0, times_exercised:int=0, inventory=[], xp:int=0) -> dict:
     """Creates and returns a dictionary representing a user"""
     d = dict()
     d["name"] = name
@@ -68,7 +68,7 @@ def initialize_db(guild):
 
         db[member.name] = d
 
-async def delete_message(ctx, delay):
+async def delete_message(ctx, delay:int):
     try:
         await ctx.message.delete(delay=delay)
     except Exception as e:
@@ -130,7 +130,7 @@ async def on_message(message):
             color_embed = parent.embeds[1]
             keyboard_embed = parent.embeds[2]
 
-            should_delete = False
+            should_delete:bool = False
             #check that the correct user is playing the game
             if color_embed.author.name != message.author.name:
                 await message.reply(f"Get your own game bruh, {color_embed.author.name} is in the middle of clutching up.", delete_after=10)
@@ -202,24 +202,17 @@ async def help(ctx, *, command=None): #* forces command to be a "keyword" type a
 
 @bot.command(description="greets you")
 async def hello(ctx):  #argv
-    print("in hello")
-    greetings: str = "Hello, Hi, Hey, Yo, What's up, Greetings, Salaam, Namaste, Bonjour, \
-        Hola, Ciao, Konnichiwa, Ni hao, Merhaba, Sawubona, Shalom, Hallo, Privet, Ahlan, Sveiki,\
-        Zdravstvuyte, Kia ora, Xin chào, Selamat pagi, Marhaba, Kumusta, Sannu, Dumelang, \
-        Jambo, Bawoni, Sawatdee, Saumia, Habari, Dumela, Shwmae, Hi, 嘿，你這個男孩, \
-        Hey there, Mornin', Howdy, G'day, Wazzapnin, Yo., Hiya, Whats good, Whats up, \
-        Howdy, Salut, Moin, Hoi, Ola, Ciao, Merhaba, Sawubona, Përshëndetje, Bok, Kumusta, Sveiki, Labas, \
-        Sholem aleikhem, Hallo, Salve, Ahoj, Hej, Dobrý den, Marhabaan, Yasou, Hei, Sannu, Nǐ hǎo, Terve,\
-        Hejhej, Aksunai, Dia dhuit, Dobro jutro, Dzień dobry, Xaipete, Salamu alaikum, Mirëdita,\
-        Sannu da zuwa, Zdravstvuyte, Shwmae, Moïen, Sveikas, Moi, Moien, Goede dag, Moïen, Szia,\
-        Hej alla, Nǐn hǎo, Hejhej, Привет, Xayrli tong, Cześć, Merhabalar, Hello"
+    greetings: str = "Hello, Hi, Hey, Yo., What's up, Greetings, Namaste, Bonjour, \
+        Hola, Ciao, Konnichiwa, Shalom, Hallo, Privet, 嘿，你這個男孩, Hey there, \
+        Mornin', Howdy, G'day, Wazzapnin, Hiya, Whats good, Howdy, Salut, Hoi, Ola,\
+        Ciao, Ahoy, Nǐ hǎo,Привет, Xayrli tong, Cześć, Merhabalar"
 
     await ctx.send(random.choice(greetings.split(", ")))
 
 
 @bot.command(description="adds a list of numbers")
 async def add(ctx, *arr):  #argv
-    result = 0
+    result:int = 0
     for i in arr:
         result += int(i)
     await ctx.send(f"Result = {result}", delete_after=60)
@@ -260,7 +253,7 @@ async def leave(ctx):
 #add amount to a user's bank account
 async def bank_update_db(id:str, amount:int, ctx=None):
     """Adds amount to the user's bank account"""
-    original_bal = 0
+    original_bal:int = 0
     if id in db.keys():
         original_bal = db[id]["balance"]
         db[id]["balance"] += amount
@@ -282,13 +275,13 @@ async def leaderboard(ctx):
     
     #make embedded message
     embed = nextcord.Embed(title="Leaderboard", color=0xff0000)
-    index = 1
+    rank:int = 1
     sorted_users = sorted(db.items(), key=lambda x: x[1]["balance"], reverse=True)
     for _, user in sorted_users:
         n = user["name"]
         b = user["balance"]
-        embed.add_field(name=f"{index}. {n}", value=f"${b}", inline=False)
-        index += 1
+        embed.add_field(name=f"{rank}. {n}", value=f"${b}", inline=False)
+        rank += 1
     
     await ctx.send(embed=embed)
 
@@ -298,7 +291,7 @@ async def leaderboard(ctx):
 @bot.command(description="displays your bank account balance", aliases=['bal'])
 async def balance(ctx):
     await ctx.channel.send(ctx.author.name + " has $" + 
-                           str(db[ctx.author.name]["balance"]) + " :money_with_wings:", delete_after=600)
+            str(db[ctx.author.name]["balance"]) + " :money_with_wings:", delete_after=600)
     await delete_message(ctx, 600)
 
 @bot.command(description="pay another user with !pay <user> <amount>")
@@ -309,8 +302,8 @@ async def pay(ctx, *arr):
         await ctx.send("Please provide <user> <amount> information.")
         return
     giver = ctx.author.name
-    receiver = arr[0]
-    amount = arr[1] #ignore the rest of arr arguments
+    receiver:str = arr[0]
+    amount:int = arr[1] #ignore the rest of arr arguments
 
     #confirm the amount is valid
     if not amount.isnumeric():
@@ -319,7 +312,7 @@ async def pay(ctx, *arr):
         return
     amount = int(arr[1])
 
-    bad_command = False
+    bad_command:bool = False
     if giver == receiver:
         await ctx.channel.send("Cannot pay yourself " + giver, delete_after=10)
         bad_command=True
@@ -390,7 +383,7 @@ async def wordle(interaction: nextcord.Interaction):
 class SlotView(nextcord.ui.View):
     def __init__(self, b):
         super().__init__()
-        self.bet = b
+        self.bet:int = b
     
     @nextcord.ui.button(label="Spin again")
     async def on_button_click(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
@@ -411,11 +404,11 @@ class SlotView(nextcord.ui.View):
         #await interaction.response.defer() #i think this makes the discord bot look like its typing. Good for waiting for an API 
 
 def calc_multiplier(d: str):
-    multiplier = 1
+    multiplier:int = 1
     s = d.replace("\n", "").replace("\n\n", "").split(" ")
-    num_triplet = 0
-    num_pity = 0
-    num_cherries = 0
+    num_triplet:int = 0
+    num_pity:int = 0
+    num_cherries:int = 0
 
     ##################################################################
     
@@ -443,7 +436,9 @@ def calc_multiplier(d: str):
         #found winner so determine multiplier
         num_triplet += 1
         multiplier *= emoji_multipliers[s[2]]
-    
+
+    if num_triplet > 0:
+        multiplier *= num_triplet
     ##################################################################
 
     #check for a cherry
@@ -459,7 +454,8 @@ def calc_multiplier(d: str):
     ##################################################################
 
     #check for pity combos of 2 vertically, horizontally, and diagonally
-    if num_triplet == 0 and num_cherries == 0:
+    if num_triplet == 0 and num_cherries == 0 and False:
+        ###################################################################test without pities
         #rows
         for row_start in range(0, 9, 3):
             row = s[row_start:row_start+3]
@@ -502,10 +498,10 @@ def calc_multiplier(d: str):
 
 async def spin(bet):
     #the 3 rows
-    screen = ""
-    end_early = False
+    screen:str = ""
+    end_early:bool = False
     for _ in range(3):
-        row = ""
+        row:str = ""
         for _ in range(3):
             emoji = random.choice(slot_emojis)
             if emoji == "???": #pity
@@ -518,6 +514,7 @@ async def spin(bet):
             break
         screen += row + "\n\n"
     
+    m:int = 0
     if end_early:
         #all gems
         m = 1000
@@ -544,7 +541,7 @@ async def slots(ctx, *arr):
         await delete_message(ctx, 3)
         return
     
-    bet = int(arr[0])
+    bet:int = int(arr[0])
 
     if db[ctx.author.name]["balance"] < bet:
         await ctx.send(str(ctx.author.name) + " has insufficient funds to bet $" + str(bet), delete_after=3)
@@ -567,7 +564,7 @@ async def slots(ctx, *arr):
     # Send the message to the channel where the command was invoked
     await ctx.send(embed=message, view=SlotView(bet))
     
-
+"""
 @bot.command()
 #example: !play blackjack 100
 async def play(ctx, *arr):
@@ -591,19 +588,20 @@ async def play(ctx, *arr):
     await ctx.channel.send(str(ctx.author.name) + " is playing " + game + " with bet " + str(bet))
     #for now, just always win and double the bet
     await bank_update_db(ctx, bet)
+"""
 
 @bot.command(description="randomly choose an agent", aliases=['pick'])
 async def agent(ctx):
     agents = ["Brimstone", "Viper", "Omen", "Killjoy", "Cypher", "Phoenix", "Sova",
         "Sage", "Jett", "Reyna", "Raze", "Breach", "Skye", "Yoru", "Astra", "KAYO",
         "Chamber", "Neon", "Fade", "Harbor", "Gekko"]
-    agent = random.choice(agents)
+    agent:str = random.choice(agents)
     await ctx.channel.send(str(ctx.author.name) + " should play " + agent, delete_after=90)
     await delete_message(ctx, 10)
 
 @bot.command(description="flip a coin", aliases=['flipcoin', 'coinflip', 'coin'])
 async def flip(ctx):
-    coin = random.choice(['Heads', 'Tails'])
+    coin:str = random.choice(['Heads', 'Tails'])
     await ctx.send(f"{coin}!", delete_after=60)
     await delete_message(ctx, 30)
 
