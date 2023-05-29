@@ -394,15 +394,19 @@ class SlotView(nextcord.ui.View):
     
     @nextcord.ui.button(label="Spin again")
     async def on_button_click(self, button: nextcord.ui.Button, interaction: nextcord.Interaction):
-        new_embed = nextcord.Embed(title=f"Jim Spins (${self.bet})", color=nextcord.Color.green())
-        new_embed.set_author(name=interaction.user.name, icon_url=str(interaction.user.avatar.url))
+        # Access the embedded message
+        new_embed = interaction.message.embeds[0] # Assume there's only one embedded message
         
+        # Access the custom field value
+        old_net:int = int(new_embed.fields[0].value) #assume field[0] is the net val
+        
+        #change description
         ret = await spin(self.bet)
         new_embed.description = ret[0]
-        new_embed.add_field(name='net', value=self.net+ret[1], inline=False)
-        #new_embed.set_footer(text='Net amount: '+str(new_embed.net))
 
-        #instead of having add_field, just reset the description by doing description=spin()
+        #adjust net value
+        new_embed.set_field_at(0, name='net', value=(old_net + ret[1]))
+
         await interaction.response.edit_message(embed=new_embed, view=self)
         #await interaction.response.defer() #i think this makes the discord bot look like its typing. Good for waiting for an API 
 
